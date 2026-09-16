@@ -1,0 +1,55 @@
+import SuperCommand from '../SuperCommand';
+import * as vscode from 'vscode';
+import { searchTrainingdetail } from '@/utils/api';
+import { showTrainDetails } from '@/utils/showTrainDetails';
+import { getWebviewViewColumn } from '@/utils/workspaceUtils';
+
+export default new SuperCommand({
+  onCommand: 'traindetails',
+  handle: async (tid?: number) => {
+    const defaultID = globalThis.tid;
+    if (!tid)
+      tid = await vscode.window
+        .showInputBox({
+          placeHolder: '输入题单编号',
+          value: defaultID,
+          ignoreFocusOut: true
+        })
+        .then(res => (res ? parseInt(res) : undefined));
+    if (!tid) {
+      return;
+    }
+    globalThis.tid = String(tid);
+    try {
+      const data = await searchTrainingdetail(tid);
+      // console.log(data)
+      const panel = vscode.window.createWebviewPanel(
+        '题单详情',
+        `${data['training']['name'] ?? data['training']['title']}`,
+        getWebviewViewColumn(),
+        {
+          enableScripts: true,
+          retainContextWhenHidden: true,
+          localResourceRoots: [
+            vscode.Uri.file(globalThis.resourcesPath),
+            vscode.Uri.file(globalThis.distPath)
+          ]
+        }
+      );
+      const html = await showTrainDetails(panel.webview, +tid);
+      panel.webview.html = html;
+      panel.webview.onDidReceiveMessage(async message => {
+        if (message.type === 'open') {
+          console.log('pid:', message.data);
+          vscode.commands.executeCommand('luogu.searchProblem', {
+            pid: message.data
+          });
+        }
+      });
+    } catch (err) {
+      vscode.window.showErrorMessage('打开失败');
+      vscode.window.showErrorMessage(`${err}`);
+      throw err;
+    }
+  }
+});

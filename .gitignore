@@ -1,0 +1,14 @@
+out/
+vsce/
+dist/
+node_modules/
+.vscode-test/
+*.vsix
+.idea/
+.DS_Store/
+test.*
+1.html
+.vs/
+.claude/
+CLAUDE.md
+.kilo/

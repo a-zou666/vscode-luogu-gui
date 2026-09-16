@@ -1,0 +1,720 @@
+{
+  "name": "vscode-luogu",
+  "displayName": "vscode-luogu",
+  "description": "Solve Luogu Problems in VSCode",
+  "icon": "resources/img/luogu-normal.png",
+  "version": "4.16.0",
+  "license": "MIT",
+  "publisher": "yltx",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "homepage": "https://github.com/yltx/vscode-luogu/blob/master/README.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yltx/vscode-luogu.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yltx/vscode-luogu/issues",
+    "email": "mvp.bxbl@gmail.com"
+  },
+  "categories": [
+    "Other",
+    "Snippets"
+  ],
+  "keywords": [
+    "luogu",
+    "algorithm",
+    "interview",
+    "OI",
+    "洛谷"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "luogu.signin",
+        "title": "登录洛谷账号(Signin)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.signout",
+        "title": "登出洛谷账号(Sign out)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.sumbitCode",
+        "title": "提交代码(Submit this code)",
+        "category": "Luogu",
+        "icon": "$(luogu-paper-plane)"
+      },
+      {
+        "command": "luogu.searchProblem",
+        "title": "查看题目(Search for problem)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.solution",
+        "title": "查看题解(Search for solution)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.fate",
+        "title": "打卡(Fate)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.benben",
+        "title": "犇犇(Benben)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.userInfo",
+        "title": "账户信息(Userinfo)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.about",
+        "title": "关于(About)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.lastRecord",
+        "title": "查看最近一次评测(Show last record)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.contest",
+        "title": "查看比赛(Show contest)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.random",
+        "title": "根据题目难度和来源随机跳题(Show random problem)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.paintboard",
+        "title": "查看冬日绘板(Show paintboard)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.traininglist",
+        "title": "查看题单广场(Show training list)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.traindetails",
+        "title": "查看题单详情(Show training details)",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.myarticle.refresh",
+        "title": "刷新文章列表",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "luogu.myarticle.open",
+        "title": "打开我的专栏",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.myarticle.setShowMode",
+        "title": "显示/隐藏文章"
+      },
+      {
+        "command": "luogu.myarticle.rename",
+        "title": "修改标题"
+      },
+      {
+        "command": "luogu.myarticle.setCategory",
+        "title": "修改文章分类"
+      },
+      {
+        "command": "luogu.myarticle.delete",
+        "title": "删除文章"
+      },
+      {
+        "command": "luogu.myarticle.setPromoteStatus",
+        "title": "申请/撤回全站推荐"
+      },
+      {
+        "command": "luogu.myarticle.setSolutionFor",
+        "title": "修改关联的题目"
+      },
+      {
+        "command": "luogu.myarticle.setTop",
+        "title": "修改置顶量"
+      },
+      {
+        "command": "luogu.myarticle.new",
+        "title": "创建文章",
+        "icon": "$(add)"
+      },
+      {
+        "command": "luogu.myarticle.copyLink",
+        "title": "复制链接"
+      },
+      {
+        "command": "luogu.myarticle.openInBrowser",
+        "title": "在浏览器中打开"
+      },
+      {
+        "command": "luogu.record",
+        "title": "评测记录"
+      },
+      {
+        "command": "luogu.openUntitledTextDocument",
+        "title": "打开新文档"
+      },
+      {
+        "command": "luogu.jumpToCph",
+        "title": "在 CPH 中打开当前题目"
+      },
+      {
+        "command": "luogu.history.refresh",
+        "title": "刷新浏览记录",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.history.clear",
+        "title": "清空浏览记录",
+        "category": "Luogu"
+      },
+      {
+        "command": "luogu.training.refresh",
+        "title": "刷新题单广场",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "luogu.training.openPlaza",
+        "title": "在面板中打开完整题单广场",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "luogu.training.loadMore",
+        "title": "加载更多题单"
+      },
+      {
+        "command": "luogu.training.openDetails",
+        "title": "打开题单详情"
+      },
+      {
+        "command": "luogu.training.submit",
+        "title": "提交代码(Submit this code)",
+        "category": "Luogu",
+        "icon": "$(luogu-paper-plane)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "luogu.signin",
+        "key": "Ctrl+Alt+G L"
+      },
+      {
+        "command": "luogu.searchProblem",
+        "key": "Ctrl+Alt+G P"
+      },
+      {
+        "command": "luogu.sumbitCode",
+        "key": "Ctrl+Alt+G S"
+      },
+      {
+        "command": "luogu.fate",
+        "key": "Ctrl+Alt+G F"
+      },
+      {
+        "command": "luogu.benben",
+        "key": "Ctrl+Alt+G B"
+      },
+      {
+        "command": "luogu.userInfo",
+        "key": "Ctrl+Alt+G U"
+      },
+      {
+        "command": "luogu.about",
+        "key": "Ctrl+Alt+G A"
+      },
+      {
+        "command": "luogu.contest",
+        "key": "Ctrl+Alt+G C"
+      },
+      {
+        "command": "luogu.random",
+        "key": "Ctrl+Alt+G R"
+      },
+      {
+        "command": "luogu.traininglist",
+        "key": "Ctrl+Alt+G T"
+      },
+      {
+        "command": "luogu.jumpToCph",
+        "key": "Ctrl+Alt+G H",
+        "when": "activeWebviewPanelId == 'problem'"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "luogu",
+          "title": "洛谷",
+          "icon": "resources/img/luogu-very-small.png"
+        }
+      ]
+    },
+    "views": {
+      "luogu": [
+        {
+          "id": "luogu.unloginSidebar",
+          "name": "未登录",
+          "when": "!luoguLoginStatus"
+        },
+        {
+          "id": "luogu.training",
+          "name": "题单广场",
+          "when": "luoguLoginStatus"
+        },
+        {
+          "id": "luogu.history",
+          "name": "最近浏览",
+          "when": "luoguLoginStatus"
+        },
+        {
+          "id": "luogu.myarticle",
+          "name": "我的专栏",
+          "when": "luoguLoginStatus"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "luogu.unloginSidebar",
+        "contents": "你需要登录你的洛谷账号。\n[登录](command:luogu.signin)"
+      },
+      {
+        "view": "luogu.training",
+        "contents": "题单广场暂无内容。\n[重试](command:luogu.training.refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "luogu.training.refresh",
+          "when": "view == luogu.training",
+          "group": "navigation@1"
+        },
+        {
+          "command": "luogu.training.openPlaza",
+          "when": "view == luogu.training",
+          "group": "navigation@2"
+        },
+        {
+          "command": "luogu.myarticle.refresh",
+          "when": "view == luogu.myarticle",
+          "group": "navigation@4"
+        },
+        {
+          "command": "luogu.myarticle.new",
+          "when": "view == luogu.myarticle",
+          "group": "navigation@6"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "luogu.myarticle.rename",
+          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
+          "group": "navigation@3"
+        },
+        {
+          "command": "luogu.myarticle.setShowMode",
+          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
+          "group": "navigation@5"
+        },
+        {
+          "command": "luogu.myarticle.setCategory",
+          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
+          "group": "navigation@4"
+        },
+        {
+          "command": "luogu.myarticle.delete",
+          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
+          "group": "navigation@7"
+        },
+        {
+          "command": "luogu.myarticle.setPromoteStatus",
+          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
+          "group": "navigation@6"
+        },
+        {
+          "command": "luogu.myarticle.setSolutionFor",
+          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem.solution/",
+          "group": "navigation@5"
+        },
+        {
+          "command": "luogu.myarticle.setTop",
+          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
+          "group": "navigation@5"
+        },
+        {
+          "command": "luogu.myarticle.copyLink",
+          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
+          "group": "navigation@8"
+        },
+        {
+          "command": "luogu.myarticle.openInBrowser",
+          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
+          "group": "navigation@9"
+        },
+        {
+          "command": "luogu.sumbitCode",
+          "when": "view == luogu.history && viewItem == luogu.history.problemItem",
+          "group": "inline"
+        },
+        {
+          "command": "luogu.training.submit",
+          "when": "view == luogu.training && viewItem == luogu.training.problemItem",
+          "group": "inline"
+        },
+        {
+          "command": "luogu.training.openDetails",
+          "when": "view == luogu.training && viewItem == luogu.training.trainingItem",
+          "group": "inline"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "luogu.jumpToCph",
+          "when": "activeWebviewPanelId == 'luogu.problemPanel'"
+        },
+        {
+          "command": "luogu.myarticle.refresh",
+          "when": "false"
+        },
+        {
+          "command": "luogu.myarticle.rename",
+          "when": "false"
+        },
+        {
+          "command": "luogu.myarticle.setShowMode",
+          "when": "false"
+        },
+        {
+          "command": "luogu.myarticle.setCategory",
+          "when": "false"
+        },
+        {
+          "command": "luogu.myarticle.delete",
+          "when": "false"
+        },
+        {
+          "command": "luogu.myarticle.setPromoteStatus",
+          "when": "false"
+        },
+        {
+          "command": "luogu.myarticle.new",
+          "when": "luoguLoginStatus"
+        },
+        {
+          "command": "luogu.myarticle.setSolutionFor",
+          "when": "false"
+        },
+        {
+          "command": "luogu.myarticle.copyLink",
+          "when": "false"
+        },
+        {
+          "command": "luogu.myarticle.openInBrowser",
+          "when": "false"
+        },
+        {
+          "command": "luogu.record",
+          "when": "false"
+        },
+        {
+          "command": "luogu.training.openPlaza",
+          "when": "false"
+        },
+        {
+          "command": "luogu.training.loadMore",
+          "when": "false"
+        },
+        {
+          "command": "luogu.training.openDetails",
+          "when": "false"
+        },
+        {
+          "command": "luogu.training.submit",
+          "when": "false"
+        },
+        {
+          "command": "luogu.openUntitledTextDocument",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Luogu",
+      "properties": {
+        "luogu.defaultLanguageVersion": {
+          "type": "object",
+          "properties": {
+            "C++": {
+              "type": "string",
+              "enum": [
+                "C++14 (GCC 9)",
+                "C++14 (GCC 9) with O2",
+                "C++98",
+                "C++98 with O2",
+                "C++11",
+                "C++11 with O2",
+                "C++14",
+                "C++14 with O2",
+                "C++17",
+                "C++17 with O2",
+                "C++20",
+                "C++20 with O2",
+                "C++23",
+                "C++23 with O2"
+              ],
+              "description": "C++ 语言版本"
+            },
+            "C": {
+              "type": "string",
+              "enum": [
+                "C",
+                "C with O2"
+              ],
+              "description": "C 语言版本"
+            },
+            "Pascal": {
+              "type": "string",
+              "enum": [
+                "Pascal",
+                "Pascal with O2"
+              ],
+              "description": "Pascal 语言版本"
+            },
+            "Python": {
+              "type": "string",
+              "enum": [
+                "Python 3",
+                "PyPy 3"
+              ],
+              "description": "Python 语言版本"
+            },
+            "Java": {
+              "type": "string",
+              "enum": [
+                "Java 8",
+                "Java 21"
+              ],
+              "description": "Java 语言版本"
+            },
+            "Rust": {
+              "type": "string",
+              "enum": [
+                "Rust",
+                "Rust with O2"
+              ],
+              "description": "Rust 语言版本"
+            },
+            "Haskell": {
+              "type": "string",
+              "enum": [
+                "Haskell",
+                "Haskell with O2"
+              ],
+              "description": "Haskell 语言版本"
+            },
+            "OCaml": {
+              "type": "string",
+              "enum": [
+                "OCaml",
+                "OCaml with O2"
+              ],
+              "description": "OCaml 语言版本"
+            }
+          },
+          "description": "提交时使用的默认语言版本。\n编辑时支持 vscode 智能提示。"
+        },
+        "luogu.guessProblemID": {
+          "type": "boolean",
+          "default": false,
+          "scope": "window",
+          "description": "尝试通过 CPH 配置或文件名猜测 PID，不再提示输入。"
+        },
+        "luogu.alwaysUseDefaultLanguageVersion": {
+          "type": "boolean",
+          "default": false,
+          "scope": "window",
+          "description": "提交时总是使用默认语言版本，不再提示选择。"
+        },
+        "luogu.defaultProblemSet": {
+          "type": "string",
+          "enum": [
+            "洛谷题库",
+            "入门与面试",
+            "Codeforces",
+            "APOJ",
+            "AtCoder",
+            "UVA"
+          ],
+          "scope": "window",
+          "description": "Default problemset for random choose problem."
+        },
+        "luogu.defaultDifficulty": {
+          "type": "string",
+          "enum": [
+            "暂无评定",
+            "入门",
+            "普及-",
+            "普及",
+            "普及+/提高-",
+            "提高",
+            "提高+/省选-",
+            "省选/NOI-",
+            "NOI/NOI+/CTS"
+          ],
+          "scope": "window",
+          "description": "Default difficulty for random choose problem."
+        },
+        "luogu.showSelectProblemsetHint": {
+          "type": "boolean",
+          "default": true,
+          "scope": "window",
+          "description": "Show select problemset hint when randomize."
+        },
+        "luogu.showSelectDifficultyHint": {
+          "type": "boolean",
+          "default": true,
+          "scope": "window",
+          "description": "Show select difficulty hint when randomize."
+        },
+        "luogu.showRecordPanel": {
+          "type": "boolean",
+          "default": true,
+          "scope": "window",
+          "description": "Show record Webview panel when opening a record."
+        },
+        "luogu.maxHistoryLength": {
+          "type": "integer",
+          "default": 256,
+          "description": "最近浏览记录的最大长度，过长的将自动删除。不应过大，否则会影响性能。"
+        },
+        "luogu.cphStyle": {
+          "type": "string",
+          "enum": [
+            "ProblemID",
+            "ProblemName",
+            "ProblemIDwithProblemName"
+          ],
+          "default": "ProblemID",
+          "description": "传送至 CPH 时，CPH 创建文件时的文件名形式。"
+        },
+        "luogu.cphPort": {
+          "type": "integer",
+          "default": 27121,
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "传送至 CPH 时使用的本地端口号（默认 27121，与 CPH 默认一致）。"
+        },
+        "luogu.webviewViewColumn": {
+          "type": "string",
+          "enum": [
+            "Beside",
+            "Active",
+            "One",
+            "Two",
+            "Three"
+          ],
+          "default": "Beside",
+          "description": "洛谷 Webview 面板的打开位置。Beside=当前编辑器旁，Active=当前活跃编辑器，One/Two/Three=固定列。"
+        }
+      }
+    },
+    "icons": {
+      "luogu-paper-plane": {
+        "description": "submit icon",
+        "default": {
+          "fontPath": "dist/icon.woff",
+          "fontCharacter": "\\E000"
+        }
+      }
+    },
+    "authentication": [
+      {
+        "label": "Luogu",
+        "id": "luogu-auth"
+      }
+    ]
+  },
+  "scripts": {
+    "pack": "node scripts/package-extension.mjs",
+    "vscode:prepublish": "npm run package",
+    "build:icons": "node ./scripts/build-icons.mjs",
+    "prepackage": "del-cli dist",
+    "watch": "npm run build:icons && webpack --mode development --watch",
+    "package": "npm run build:icons && webpack --mode production",
+    "lint": "eslint .",
+    "fix": "eslint . --fix",
+    "prettier": "npx prettier . -w",
+    "typecheck": "tsc --noEmit -p tsconfig.check.json",
+    "test": "vitest run",
+    "test:release": "node --test scripts/release-policy.test.mjs",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "ci": "npm run lint && npm run typecheck && npm run test && npm run test:release"
+  },
+  "devDependencies": {
+    "@types/katex": "^0.16.5",
+    "@types/markdown-it": "^13.0.4",
+    "@types/node": "^20.19.43",
+    "@types/react": "^18.2.67",
+    "@types/react-dom": "^18.2.22",
+    "@types/vscode": "^1.75.0",
+    "@types/ws": "^8.5.8",
+    "@typescript-eslint/eslint-plugin": "^7.3.1",
+    "@typescript-eslint/parser": "^7.3.1",
+    "@vitest/coverage-v8": "^4.1.7",
+    "@vscode/vsce": "^3.6.2",
+    "@vscode/webview-ui-toolkit": "^1.2.2",
+    "css-loader": "^6.11.0",
+    "del-cli": "^5.1.0",
+    "eslint": "^8.50.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "eslint-plugin-react": "^7.35.0",
+    "prettier": "^3.2.5",
+    "style-loader": "^3.3.4",
+    "terser-webpack-plugin": "5.6.1",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.2.2",
+    "vitest": "^4.1.7",
+    "webfont": "^11.2.26",
+    "webpack": "5.108.4",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-brands-svg-icons": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.0",
+    "@vscode/markdown-it-katex": "^1.0.3",
+    "axios": "1.18.1",
+    "hast-util-from-html": "^2.0.2",
+    "lg-markdown-processor": "github:Mr-Python-in-China/lg-markdown-processor",
+    "markdown-it": "14.3.0",
+    "markdown-it-highlightjs": "^4.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rehype-highlight": "^7.0.0",
+    "rehype-react": "^8.0.0",
+    "remark-directive": "3.0.1",
+    "unist-util-visit": "^5.0.0",
+    "ws": "8.21.1"
+  },
+  "author": "",
+  "packageManager": "npm@11.18.0"
+}
