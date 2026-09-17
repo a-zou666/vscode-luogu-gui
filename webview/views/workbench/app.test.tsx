@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, act, cleanup } from '@testing-library/react';
+import {
+  render,
+  screen,
+  act,
+  cleanup,
+  fireEvent
+} from '@testing-library/react';
 
 // 项目 JSX 走 classic transform（tsconfig "jsx": "react"），需显式引入 React。
 const { default: React } = await import('react');
@@ -159,5 +165,58 @@ describe('评测推送的增量合并（缺陷 3 回归）', () => {
     push({ type: 'trackError', stage: '跟踪评测', message: '连接中断' });
 
     expect(await screen.findByText('连接中断')).toBeTruthy();
+  });
+});
+
+describe('题单广场二级页面（布局回归）', () => {
+  const channels = [{ key: 'official', name: '官方题单' }];
+  const list = {
+    trainings: [{ id: 7, name: '入门题单', problemCount: 2, acceptedCount: 1 }],
+    count: 1,
+    perPage: 50
+  };
+  const detail = {
+    id: 7,
+    name: '入门题单',
+    problems: [{ pid: 'P1001', title: 'A+B Problem', difficulty: 1, status: 1 }]
+  };
+
+  const renderPlaza = async () => {
+    send.mockImplementation((type: string) => {
+      if (type === 'workbenchTrainingChannels')
+        return Promise.resolve(channels);
+      if (type === 'workbenchTrainingList') return Promise.resolve(list);
+      if (type === 'workbenchTrainingDetail') return Promise.resolve(detail);
+      return new Promise(() => {});
+    });
+    const { default: ProblemPage } = await import('./problemPage');
+    render(<ProblemPage onSubmitProblem={() => {}} />);
+    await screen.findByText('入门题单');
+  };
+
+  it('一级页只渲染频道横排 + 全宽题单列表，不再有三列布局', async () => {
+    await renderPlaza();
+    // 旧的「频道|题单|题目」三列被移除：题目列不再与题单列并排挤占宽度
+    expect(document.querySelector('.wb-col')).toBeNull();
+    expect(document.querySelector('.wb-chips-row')).toBeTruthy();
+    expect(screen.getByText('官方题单')).toBeTruthy();
+  });
+
+  it('点开题单进入二级页展示题目，且能返回题单列表', async () => {
+    await renderPlaza();
+
+    fireEvent.click(screen.getByText('入门题单'));
+
+    // 二级页：题单内题目铺满整宽，返回按钮可用
+    expect(await screen.findByText('A+B Problem')).toBeTruthy();
+    expect(screen.getByText('← 返回题单')).toBeTruthy();
+    expect(send).toHaveBeenCalledWith('workbenchTrainingDetail', { id: 7 });
+    // 二级页里不再并排渲染一级页的频道横排
+    expect(document.querySelector('.wb-chips-row')).toBeNull();
+
+    fireEvent.click(screen.getByText('← 返回题单'));
+
+    expect(await screen.findByText('官方题单')).toBeTruthy();
+    expect(screen.queryByText('A+B Problem')).toBeNull();
   });
 });

@@ -322,58 +322,24 @@ body {
   font-size: 12px;
 }
 
-/* 题单广场：左频道 / 中题单 / 右题目 三层 */
-.wb-plaza {
-  flex: 1;
-  min-height: 0;
+/* 题单广场：一级 = 频道横排 + 题单列表；二级 = 题单内题目（全宽） */
+.wb-chips-row {
   display: flex;
-}
-.wb-col {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  border-right: 1px solid var(--wb-line);
-}
-.wb-col:last-child {
-  border-right: none;
-}
-.wb-col-head {
-  padding: 10px 14px;
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  color: var(--vscode-descriptionForeground);
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--wb-line);
   flex: 0 0 auto;
 }
-.wb-col-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
-  padding: 8px;
-}
-.wb-col.channels {
-  flex: 0 0 160px;
-}
-.wb-col.trainings {
-  flex: 0 0 300px;
-}
-.wb-col.problems {
-  flex: 1;
-  min-width: 0;
-}
-
 .wb-chip {
-  display: block;
-  width: 100%;
-  text-align: left;
   border: 1px solid transparent;
   background: transparent;
   color: var(--vscode-foreground);
-  border-radius: 8px;
-  padding: 8px 12px;
+  border-radius: 999px;
+  padding: 5px 14px;
   cursor: pointer;
   font-size: 13px;
-  margin-bottom: 2px;
+  white-space: nowrap;
 }
 .wb-chip:hover {
   background: color-mix(in srgb, var(--wb-accent) 12%, transparent);
@@ -384,8 +350,29 @@ body {
   color: var(--wb-accent);
   font-weight: 600;
 }
-
-/* ── 提交页 ── */
+/* 二级页标题：单行省略，不挤压返回按钮 */
+.wb-crumb {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.wb-chevron {
+  flex: 0 0 auto;
+  color: var(--vscode-descriptionForeground);
+  font-size: 18px;
+  line-height: 1;
+}
+/* 题单行是按钮，抹掉浏览器默认按钮外观 */
+button.wb-row {
+  width: 100%;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}/* ── 提交页 ── */
 .wb-submit {
   flex: 1;
   display: grid;
@@ -605,40 +592,10 @@ body {
   .wb-toolbar .wb-input {
     flex: 1 1 100%;
   }
-  /* 三层广场 → 纵向堆叠，各层各自滚动 */
-  .wb-plaza {
-    flex-direction: column;
-    overflow: auto;
-  }
-  .wb-col {
-    border-right: none;
-    border-bottom: 1px solid var(--wb-line);
-  }
-  .wb-col:last-child {
-    border-bottom: none;
-  }
-  .wb-col.channels,
-  .wb-col.trainings {
-    flex: 0 0 auto;
-  }
-  /* 频道数少，横向铺开更省纵向空间 */
-  .wb-col.channels .wb-col-body {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .wb-col.channels .wb-chip {
-    width: auto;
-    margin-bottom: 0;
-  }
-  .wb-col.trainings {
-    max-height: 38vh;
-  }
-  .wb-col.problems {
-    flex: 1 1 auto;
-    min-height: 220px;
-  }
-  /* 提交页两栏 → 一栏 */
+  /* 广场：频道横排自动换行，列表占满剩余高度 */
+  .wb-chips-row {
+    padding: 8px 12px;
+  }  /* 提交页两栏 → 一栏 */
   .wb-submit {
     grid-template-columns: 1fr;
     padding: 12px;

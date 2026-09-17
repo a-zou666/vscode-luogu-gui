@@ -21,11 +21,14 @@ import type {
 } from './types';
 
 type Mode = 'search' | 'plaza';
-type View = { kind: 'list' } | { kind: 'detail'; pid: string };
+type View =
+  | { kind: 'list' }
+  | { kind: 'training'; id: number; name: string }
+  | { kind: 'problem'; pid: string; from?: { id: number; name: string } };
 
 const PAGE_SIZE_HINT = '第 {page} 页';
 
-/** 题目页：搜索框 + 题单广场（频道/题单/题目三层）+ 题目详情内嵌渲染。 */
+/** 题目页：搜索框 + 题单广场（频道 → 题单 → 题目，逐级下钻）+ 题目详情内嵌渲染。 */
 export default function ProblemPage({
   onSubmitProblem
 }: {
@@ -34,14 +37,19 @@ export default function ProblemPage({
   const [mode, setMode] = useState<Mode>('plaza');
   const [view, setView] = useState<View>({ kind: 'list' });
 
-  if (view.kind === 'detail')
+  // 题目详情：从题单里进来的话，返回时回到该题单的题目列表，而不是一级页。
+  if (view.kind === 'problem') {
+    const from = view.from;
     return (
       <ProblemDetail
         pid={view.pid}
-        onBack={() => setView({ kind: 'list' })}
+        onBack={() =>
+          setView(from ? { kind: 'training', ...from } : { kind: 'list' })
+        }
         onSubmitProblem={onSubmitProblem}
       />
     );
+  }
 
   return (
     <div className="wb-pane">
@@ -61,12 +69,25 @@ export default function ProblemPage({
       </div>
       {mode === 'plaza' ? (
         <Plaza
-          onOpenProblem={pid => setView({ kind: 'detail', pid })}
+          openTraining={view.kind === 'training' ? view : undefined}
+          onOpenTraining={t =>
+            setView(t ? { kind: 'training', ...t } : { kind: 'list' })
+          }
+          onOpenProblem={pid =>
+            setView({
+              kind: 'problem',
+              pid,
+              from:
+                view.kind === 'training'
+                  ? { id: view.id, name: view.name }
+                  : undefined
+            })
+          }
           onSubmitProblem={onSubmitProblem}
         />
       ) : (
         <SearchPane
-          onOpenProblem={pid => setView({ kind: 'detail', pid })}
+          onOpenProblem={pid => setView({ kind: 'problem', pid })}
           onSubmitProblem={onSubmitProblem}
         />
       )}
@@ -218,11 +239,15 @@ function SearchPane({
   );
 }
 
-/** 题单广场：左频道 / 中题单 / 右题目，三层联动。 */
+/** 题单广场：一级=频道 + 题单列表（全宽）；二级=点开的题单内题目列表（全宽）。 */
 function Plaza({
+  openTraining,
+  onOpenTraining,
   onOpenProblem,
   onSubmitProblem
 }: {
+  openTraining: { id: number; name: string } | undefined;
+  onOpenTraining: (t: { id: number; name: string } | undefined) => void;
   onOpenProblem: (pid: string) => void;
   onSubmitProblem: (pid: string, cid?: number) => void;
 }) {
@@ -231,7 +256,6 @@ function Plaza({
   const [page, setPage] = useState(1);
   const [list, setList] = useState<TrainingPage | undefined>(undefined);
   const [keyword, setKeyword] = useState('');
-  const [training, setTraining] = useState<number | undefined>(undefined);
   const [detail, setDetail] = useState<TrainingDetail | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
   const [loadingList, setLoadingList] = useState(false);
@@ -253,8 +277,6 @@ function Plaza({
     let alive = true;
     setLoadingList(true);
     setError(undefined);
-    setTraining(undefined);
-    setDetail(undefined);
     send('workbenchTrainingList', { channel, page, keyword })
       .then(res => alive && setList(res))
       .catch(e => alive && setError(e instanceof Error ? e.message : String(e)))
@@ -264,26 +286,71 @@ function Plaza({
     };
   }, [channel, page, keyword]);
 
-  // 选中题单 → 拉题目
+  // 点开题单 → 拉该题单的题目（二级页）
   useEffect(() => {
-    if (training === undefined) return;
+    if (openTraining === undefined) return;
     let alive = true;
     setLoadingDetail(true);
     setDetail(undefined);
-    send('workbenchTrainingDetail', { id: training })
+    send('workbenchTrainingDetail', { id: openTraining.id })
       .then(res => alive && setDetail(res))
       .catch(e => alive && setError(e instanceof Error ? e.message : String(e)))
       .finally(() => alive && setLoadingDetail(false));
     return () => {
       alive = false;
     };
-  }, [training]);
+  }, [openTraining]);
 
   const totalPages = Math.max(
     1,
     Math.ceil((list?.count ?? 0) / (list?.perPage ?? 50))
   );
 
+  // ── 二级页：题单内的题目，占满整个面板宽度（不再被频道/题单列挤压）──
+  if (openTraining !== undefined)
+    return (
+      <div className="wb-pane">
+        <div className="wb-toolbar">
+          <button className="wb-btn" onClick={() => onOpenTraining(undefined)}>
+            ← 返回题单
+          </button>
+          <span className="wb-crumb" title={openTraining.name}>
+            {openTraining.name}
+          </span>
+          <span style={{ flex: 1, minWidth: 0 }} />
+          {detail && (
+            <span className="wb-meta">{detail.problems.length} 题</span>
+          )}
+        </div>
+        <div className="wb-scroll">
+          {error && (
+            <div className="wb-errbox" style={{ marginBottom: 10 }}>
+              {error}
+            </div>
+          )}
+          {loadingDetail ? (
+            <div className="wb-empty">
+              <Spinner /> 正在加载题目……
+            </div>
+          ) : !detail || detail.problems.length === 0 ? (
+            <div className="wb-empty">该题单暂无题目</div>
+          ) : (
+            <div className="wb-list">
+              {detail.problems.map(p => (
+                <TrainingProblemRow
+                  key={p.pid}
+                  item={p}
+                  onOpen={() => onOpenProblem(p.pid)}
+                  onSubmit={() => onSubmitProblem(p.pid)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+
+  // ── 一级页：频道横排 + 题单列表，纵向排布，题单占满宽度 ──
   return (
     <div className="wb-pane">
       <div className="wb-toolbar">
@@ -314,106 +381,71 @@ function Plaza({
           {error}
         </div>
       )}
-      <div className="wb-plaza">
-        <div className="wb-col channels">
-          <div className="wb-col-head">频道</div>
-          <div className="wb-col-body">
-            {channels === undefined ? (
-              <div className="wb-empty">
-                <Spinner size={18} />
-              </div>
-            ) : (
-              channels.map(c => (
+      <div className="wb-chips-row">
+        {channels === undefined ? (
+          <Spinner size={18} />
+        ) : (
+          channels.map(c => (
+            <button
+              key={c.key}
+              className={channel === c.key ? 'wb-chip active' : 'wb-chip'}
+              onClick={() => {
+                setChannel(c.key);
+                setPage(1);
+              }}
+            >
+              {c.name}
+            </button>
+          ))
+        )}
+      </div>
+      <div className="wb-scroll">
+        {loadingList && !list ? (
+          <div className="wb-empty">
+            <Spinner /> 正在加载题单……
+          </div>
+        ) : !list || list.trainings.length === 0 ? (
+          <div className="wb-empty">该频道下没有题单</div>
+        ) : (
+          <>
+            <div className="wb-list">
+              {list.trainings.map(t => (
                 <button
-                  key={c.key}
-                  className={channel === c.key ? 'wb-chip active' : 'wb-chip'}
-                  onClick={() => {
-                    setChannel(c.key);
-                    setPage(1);
-                  }}
+                  key={t.id}
+                  className="wb-row"
+                  onClick={() => onOpenTraining({ id: t.id, name: t.name })}
                 >
-                  {c.name}
+                  <span className="wb-title">{t.name}</span>
+                  <span className="wb-meta">
+                    {t.problemCount} 题 · 已过 {t.acceptedCount}
+                  </span>
+                  <span className="wb-chevron">›</span>
                 </button>
-              ))
-            )}
-          </div>
-        </div>
-        <div className="wb-col trainings">
-          <div className="wb-col-head">题单</div>
-          <div className="wb-col-body">
-            {loadingList && !list ? (
-              <div className="wb-empty">
-                <Spinner size={18} />
-              </div>
-            ) : !list || list.trainings.length === 0 ? (
-              <div className="wb-empty">该频道下没有题单</div>
-            ) : (
-              <>
-                {list.trainings.map(t => (
-                  <button
-                    key={t.id}
-                    className={training === t.id ? 'wb-chip active' : 'wb-chip'}
-                    onClick={() => setTraining(t.id)}
-                  >
-                    {t.name}
-                    <span className="wb-meta">
-                      {' '}
-                      {t.problemCount} 题 · 已过 {t.acceptedCount}
-                    </span>
-                  </button>
-                ))}
-                {totalPages > 1 && (
-                  <div className="wb-pager">
-                    <button
-                      className="wb-mini"
-                      disabled={page <= 1}
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                    >
-                      上一页
-                    </button>
-                    <span>
-                      {page}/{totalPages}
-                    </span>
-                    <button
-                      className="wb-mini"
-                      disabled={page >= totalPages}
-                      onClick={() => setPage(p => p + 1)}
-                    >
-                      下一页
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-        <div className="wb-col problems">
-          <div className="wb-col-head">
-            题目{detail ? ` · ${detail.name}` : ''}
-          </div>
-          <div className="wb-col-body">
-            {training === undefined ? (
-              <div className="wb-empty">← 选择一个题单查看题目</div>
-            ) : loadingDetail ? (
-              <div className="wb-empty">
-                <Spinner size={18} />
-              </div>
-            ) : !detail || detail.problems.length === 0 ? (
-              <div className="wb-empty">该题单暂无题目</div>
-            ) : (
-              <div className="wb-list">
-                {detail.problems.map(p => (
-                  <TrainingProblemRow
-                    key={p.pid}
-                    item={p}
-                    onOpen={() => onOpenProblem(p.pid)}
-                    onSubmit={() => onSubmitProblem(p.pid)}
-                  />
-                ))}
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <div className="wb-pager">
+                <button
+                  className="wb-mini"
+                  disabled={page <= 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                >
+                  上一页
+                </button>
+                <span>
+                  {page}/{totalPages}
+                </span>
+                <button
+                  className="wb-mini"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(p => p + 1)}
+                >
+                  下一页
+                </button>
               </div>
             )}
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
