@@ -70,6 +70,19 @@ export namespace API {
     `/training/list?type=${channel}&page=${page}&keyword=${encodeURI(
       keyword
     )}&_contentOnly=1`;
+  /**
+   * 题库列表 / 搜索。`difficulty` 为 0 表示不限，`type` 为空表示不限题库。
+   * 与 `/training/list` 一样走 `_contentOnly=1`，响应在 `currentData` 下。
+   */
+  export const PROBLEM_LIST = (
+    page: number,
+    keyword: string,
+    difficulty: number,
+    type: string
+  ) =>
+    `/problem/list?page=${page}&keyword=${encodeURI(
+      keyword
+    )}&difficulty=${difficulty}&type=${type}&_contentOnly=1`;
   export const SOLUTION_REFERER = (pid: string) => `/problem/solution/${pid}`;
   export const MYARTICLE = `/article/mine?_contentOnly`,
     DELETE_ARTICLE = (lid: string) => `/article/${lid}/delete`,
@@ -361,6 +374,47 @@ export const searchTrainingdetail = async (id: number) =>
       }
     });
 
+/**
+ * 题库列表 / 搜索，供统一面板的「题目」页使用。
+ *
+ * 返回的是 `{ problems: List<ProblemSummary>, ... }`：`problems.result` 在
+ * 当前 API 下是数组，历史上是以下标为键的对象，调用方需自行归一化（参见
+ * `normalizeListResult`）。`keyword` 为空即普通分页浏览。
+ */
+export const searchProblemList = async (
+  page: number,
+  keyword: string,
+  difficulty: number = 0,
+  type: string = ''
+) =>
+  axios
+    .get(API.PROBLEM_LIST(page, keyword, difficulty, type))
+    .then(res => {
+      const d = res.data;
+      // 两代响应包络：DataResponse.currentData / LentilleDataResponse.data
+      const data = d.currentData ?? d.data;
+      if (data === null || data === undefined)
+        throw new Error('题目列表不存在');
+      return data;
+    })
+    .catch(err => {
+      if (err.response) {
+        throw err.response.data;
+      } else if (err.request) {
+        throw new Error('请求超时，请重试');
+      } else {
+        throw err;
+      }
+    });
+
+/** 把 `List<T>.result`（数组或下标对象）归一化成数组。 */
+export const normalizeListResult = <T>(
+  result: T[] | { [index: number]: T } | undefined | null
+): T[] => {
+  if (result === undefined || result === null) return [];
+  return Array.isArray(result) ? result : Object.values(result);
+};
+
 export const login = async (
   username: string,
   password: string,
@@ -454,7 +508,11 @@ export const sendMail2fa = async (captcha: string, cookie?: Cookie) =>
 export const fetchResult = async (rid: number) =>
   axios
     .get<DataResponse<RecordData>>(`/record/${rid}?_contentOnly=1`)
-    .then(data => data?.data.currentData)
+    // `/record/{rid}?_contentOnly=1` 返回 DataResponse 形状，记录在 `currentData` 里
+    // （与 fetchRecords 一致）。这里显式抛错而不是把 undefined 交给下游，
+    // 否则调用方会读到 `Cannot read properties of undefined (reading 'showStatus')`
+    // 这种完全定位不到源的报错。
+    .then(res => parseRecordDataResponse(res.data))
     .catch(err => {
       if (err.response) {
         throw err.response.data;
@@ -464,6 +522,16 @@ export const fetchResult = async (rid: number) =>
         throw err;
       }
     });
+
+export const parseRecordDataResponse = <T>(response: {
+  data?: T;
+  currentData?: T;
+}): T => {
+  const data = response.currentData ?? response.data;
+  if (data === undefined || data === null)
+    throw new Error('记录不存在或无权查看');
+  return data;
+};
 
 export const fetch3kHomepage = async () =>
   axios

@@ -52,6 +52,12 @@
         "icon": "$(luogu-paper-plane)"
       },
       {
+        "command": "luogu.submitCurrentFile",
+        "title": "提交当前文件(Submit current file)",
+        "category": "Luogu",
+        "icon": "$(luogu-paper-plane)"
+      },
+      {
         "command": "luogu.searchProblem",
         "title": "查看题目(Search for problem)",
         "category": "Luogu"
@@ -167,6 +173,17 @@
         "title": "评测记录"
       },
       {
+        "command": "luogu.workbench",
+        "title": "打开洛谷工作台(Open workbench)",
+        "category": "Luogu",
+        "icon": "$(luogu-paper-plane)"
+      },
+      {
+        "command": "luogu.workbench.open",
+        "title": "打开洛谷工作台(Open workbench)",
+        "category": "Luogu"
+      },
+      {
         "command": "luogu.openUntitledTextDocument",
         "title": "打开新文档"
       },
@@ -251,139 +268,16 @@
         "key": "Ctrl+Alt+G T"
       },
       {
+        "command": "luogu.workbench",
+        "key": "Ctrl+Alt+G W"
+      },
+      {
         "command": "luogu.jumpToCph",
         "key": "Ctrl+Alt+G H",
         "when": "activeWebviewPanelId == 'problem'"
       }
     ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "luogu",
-          "title": "洛谷",
-          "icon": "resources/img/luogu-very-small.png"
-        }
-      ]
-    },
-    "views": {
-      "luogu": [
-        {
-          "id": "luogu.unloginSidebar",
-          "name": "未登录",
-          "when": "!luoguLoginStatus"
-        },
-        {
-          "id": "luogu.training",
-          "name": "题单广场",
-          "when": "luoguLoginStatus"
-        },
-        {
-          "id": "luogu.history",
-          "name": "最近浏览",
-          "when": "luoguLoginStatus"
-        },
-        {
-          "id": "luogu.myarticle",
-          "name": "我的专栏",
-          "when": "luoguLoginStatus"
-        }
-      ]
-    },
-    "viewsWelcome": [
-      {
-        "view": "luogu.unloginSidebar",
-        "contents": "你需要登录你的洛谷账号。\n[登录](command:luogu.signin)"
-      },
-      {
-        "view": "luogu.training",
-        "contents": "题单广场暂无内容。\n[重试](command:luogu.training.refresh)"
-      }
-    ],
     "menus": {
-      "view/title": [
-        {
-          "command": "luogu.training.refresh",
-          "when": "view == luogu.training",
-          "group": "navigation@1"
-        },
-        {
-          "command": "luogu.training.openPlaza",
-          "when": "view == luogu.training",
-          "group": "navigation@2"
-        },
-        {
-          "command": "luogu.myarticle.refresh",
-          "when": "view == luogu.myarticle",
-          "group": "navigation@4"
-        },
-        {
-          "command": "luogu.myarticle.new",
-          "when": "view == luogu.myarticle",
-          "group": "navigation@6"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "luogu.myarticle.rename",
-          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
-          "group": "navigation@3"
-        },
-        {
-          "command": "luogu.myarticle.setShowMode",
-          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
-          "group": "navigation@5"
-        },
-        {
-          "command": "luogu.myarticle.setCategory",
-          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
-          "group": "navigation@4"
-        },
-        {
-          "command": "luogu.myarticle.delete",
-          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
-          "group": "navigation@7"
-        },
-        {
-          "command": "luogu.myarticle.setPromoteStatus",
-          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
-          "group": "navigation@6"
-        },
-        {
-          "command": "luogu.myarticle.setSolutionFor",
-          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem.solution/",
-          "group": "navigation@5"
-        },
-        {
-          "command": "luogu.myarticle.setTop",
-          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
-          "group": "navigation@5"
-        },
-        {
-          "command": "luogu.myarticle.copyLink",
-          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
-          "group": "navigation@8"
-        },
-        {
-          "command": "luogu.myarticle.openInBrowser",
-          "when": "view == luogu.myarticle && viewItem =~ /^luogu.article.articleitem/",
-          "group": "navigation@9"
-        },
-        {
-          "command": "luogu.sumbitCode",
-          "when": "view == luogu.history && viewItem == luogu.history.problemItem",
-          "group": "inline"
-        },
-        {
-          "command": "luogu.training.submit",
-          "when": "view == luogu.training && viewItem == luogu.training.problemItem",
-          "group": "inline"
-        },
-        {
-          "command": "luogu.training.openDetails",
-          "when": "view == luogu.training && viewItem == luogu.training.trainingItem",
-          "group": "inline"
-        }
-      ],
       "commandPalette": [
         {
           "command": "luogu.jumpToCph",
@@ -450,8 +344,30 @@
           "when": "false"
         },
         {
+          "command": "luogu.submitCurrentFile",
+          "when": "editorTextFocus"
+        },
+        {
           "command": "luogu.openUntitledTextDocument",
           "when": "false"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "luogu",
+          "title": "洛谷",
+          "icon": "resources/img/luogu-very-small.png"
+        }
+      ]
+    },
+    "views": {
+      "luogu": [
+        {
+          "id": "luogu.workbenchView",
+          "name": "工作台",
+          "type": "webview"
         }
       ]
     },
@@ -548,9 +464,9 @@
         },
         "luogu.alwaysUseDefaultLanguageVersion": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "scope": "window",
-          "description": "提交时总是使用默认语言版本，不再提示选择。"
+          "description": "提交时总是使用默认语言版本（按文件后缀自动识别语言，如 .cpp → C++，并沿用默认的 O2 设置），不再提示选择。关闭后每次提交都会弹窗让你手动选语言和版本。"
         },
         "luogu.defaultProblemSet": {
           "type": "string",

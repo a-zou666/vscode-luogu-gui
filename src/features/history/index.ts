@@ -7,6 +7,11 @@ import {
   searchTrainingdetail
 } from '@/utils/api';
 
+/**
+ * 浏览记录已并入统一工作台面板，侧边栏视图不再注册。provider 仍然保留：
+ * 它是历史数据层，`globalThis.luogu.historyTreeviewProvider` 与
+ * `insertHistory` 被 contest / viewProblem 等 feature 用来写入记录。
+ */
 export default function registerHistory(context: vscode.ExtensionContext) {
   const view = new historyTreeviewProvider(
     () => getStorage(context, 'history'),
@@ -14,7 +19,6 @@ export default function registerHistory(context: vscode.ExtensionContext) {
   );
   globalThis.luogu.insertHistory = item => void view.addItem(item);
   globalThis.luogu.historyTreeviewProvider = view;
-  vscode.window.registerTreeDataProvider('luogu.history', view);
   context.subscriptions.push(view);
 
   context.subscriptions.push(

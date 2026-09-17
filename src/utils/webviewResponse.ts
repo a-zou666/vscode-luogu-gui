@@ -53,7 +53,30 @@ const requestValidators = {
   ContestJoin: isVoid,
   ContestEnterContestMode: isVoid,
   ContestMonitorGet: isVoid,
-  ContestMonitorStop: isVoid
+  ContestMonitorStop: isVoid,
+  workbenchLoginStatus: isVoid,
+  workbenchSearchProblem: (data: unknown) =>
+    hasShape(data, {
+      page: isInteger,
+      keyword: isString,
+      // hasShape 会逐个校验声明的键，可选字段必须显式放行 undefined
+      difficulty: value => value === undefined || isInteger(value),
+      type: value => value === undefined || isString(value)
+    }),
+  workbenchTrainingChannels: isVoid,
+  workbenchTrainingList: (data: unknown) =>
+    hasShape(data, {
+      channel: isString,
+      page: isInteger,
+      keyword: value => value === undefined || isString(value)
+    }),
+  workbenchTrainingDetail: (data: unknown) => hasShape(data, { id: isInteger }),
+  workbenchProblemDetail: (data: unknown) => hasShape(data, { pid: isString }),
+  workbenchSubmit: (data: unknown) =>
+    hasShape(data, {
+      pid: isString,
+      cid: value => value === undefined || isInteger(value)
+    })
 } satisfies Record<keyof MessageTypes, Validator>;
 
 const uuidPattern =

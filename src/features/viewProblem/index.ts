@@ -41,6 +41,12 @@ export default function registerViewProblem(context: vscode.ExtensionContext) {
                 problemData.problem.title ?? problemData.problem.content.name
             });
             showProblemWebview(problemData);
+            // 记住“当前正在看的题”，这样“提交当前文件”在没带 pid 时
+            // 也能落到正确的题目上，而不是退回命令行输入。
+            globalThis.luogu.lastViewProblem = {
+              pid: problemData.problem.pid,
+              cid: problemData.contest?.id
+            };
             return true;
           })
           .catch((e: unknown) => {

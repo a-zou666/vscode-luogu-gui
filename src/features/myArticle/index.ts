@@ -12,20 +12,22 @@ import {
 import { isAxiosError } from 'axios';
 import { processAxiosError } from '@/utils/workspaceUtils';
 
+/**
+ * 我的专栏的侧边栏视图已随统一工作台面板一并拆除，但文件系统 provider 与全部
+ * 命令都保留：文章仍以 `luogu-myarticle:` 虚拟文件的形式打开/编辑，命令面板里
+ * 的「创建文章」等操作照常可用。原先 `open` 会聚焦侧边栏视图，现在改为打开
+ * 工作台（视图已不存在，聚焦它会报错）。
+ */
 export default function registerMyArticle(context: vscode.ExtensionContext) {
   const fs = new myArticleFsProvider('luogu-myarticle');
   context.subscriptions.push(
     vscode.workspace.registerFileSystemProvider('luogu-myarticle', fs)
   );
   const view = new MyArticleTreeviewProvider(fs);
-  vscode.window.createTreeView('luogu.myarticle', {
-    treeDataProvider: view
-  });
   context.subscriptions.push(view);
   context.subscriptions.push(
     vscode.commands.registerCommand('luogu.myarticle.open', async () => {
-      await vscode.commands.executeCommand('workbench.view.extension.luogu');
-      await vscode.commands.executeCommand('luogu.myarticle.focus');
+      await vscode.commands.executeCommand('luogu.workbench');
     }),
     vscode.commands.registerCommand('luogu.myarticle.refresh', () =>
       view.refresh()

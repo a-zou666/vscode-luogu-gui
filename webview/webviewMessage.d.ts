@@ -126,6 +126,68 @@ type ContestMonitorStop = WebviewMessage<
   WebviewRequestMessage<'ContestMonitorStop', void>,
   WebviewResponseMessage<boolean>
 >;
+// ── 统一工作台面板（workbench）──
+type WorkbenchLoginStatus = WebviewMessage<
+  WebviewRequestMessage<'workbenchLoginStatus', void>,
+  WebviewResponseMessage<{ loggedIn: boolean; username?: string }>
+>;
+type WorkbenchSearchProblem = WebviewMessage<
+  WebviewRequestMessage<
+    'workbenchSearchProblem',
+    {
+      page: number;
+      keyword: string;
+      difficulty?: number;
+      type?: string;
+    }
+  >,
+  WebviewResponseMessage<{
+    problems: { pid: string; title: string; difficulty: number | null }[];
+    count: number;
+    perPage: number | null;
+  }>
+>;
+type WorkbenchTrainingChannels = WebviewMessage<
+  WebviewRequestMessage<'workbenchTrainingChannels', void>,
+  WebviewResponseMessage<{ key: string; name: string }[]>
+>;
+type WorkbenchTrainingList = WebviewMessage<
+  WebviewRequestMessage<
+    'workbenchTrainingList',
+    { channel: string; page: number; keyword?: string }
+  >,
+  WebviewResponseMessage<{
+    trainings: {
+      id: number;
+      name: string;
+      problemCount: number;
+      acceptedCount: number;
+    }[];
+    count: number;
+    perPage: number | null;
+  }>
+>;
+type WorkbenchTrainingDetail = WebviewMessage<
+  WebviewRequestMessage<'workbenchTrainingDetail', { id: number }>,
+  WebviewResponseMessage<{
+    id: number;
+    name: string;
+    problems: {
+      pid: string;
+      title: string;
+      difficulty: number | null;
+      status?: number;
+    }[];
+  }>
+>;
+type WorkbenchProblemDetail = WebviewMessage<
+  WebviewRequestMessage<'workbenchProblemDetail', { pid: string }>,
+  WebviewResponseMessage<import('luogu-api').ProblemData>
+>;
+type WorkbenchSubmit = WebviewMessage<
+  WebviewRequestMessage<'workbenchSubmit', { pid: string; cid?: number }>,
+  WebviewResponseMessage<{ rid: number }>
+>;
 type MessageTypes = MessageTypesBase<
   // Add new types in this array.
   [
@@ -151,7 +213,14 @@ type MessageTypes = MessageTypesBase<
     ContestJoin,
     ContestEnterContestMode,
     ContestMonitorGet,
-    ContestMonitorStop
+    ContestMonitorStop,
+    WorkbenchLoginStatus,
+    WorkbenchSearchProblem,
+    WorkbenchTrainingChannels,
+    WorkbenchTrainingList,
+    WorkbenchTrainingDetail,
+    WorkbenchProblemDetail,
+    WorkbenchSubmit
   ]
 >;
 export default MessageTypes;

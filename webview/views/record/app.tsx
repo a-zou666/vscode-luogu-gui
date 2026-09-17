@@ -4,6 +4,7 @@ import useRecordStatus from './data';
 
 const { formatMemory, formatTime } = await import('@/utils/stringUtils');
 const { ProblemNameWithDifficulty, Spinner } = await import('@w/components');
+import type { TrackingState } from './data';
 const { RecordStatus, getScoreColor, LanguageString, vscodeLanguageId } =
   await import('@/utils/shared');
 const { default: Time } = await import('@w/components/time');
@@ -14,6 +15,13 @@ import './app.css';
 
 export default function App() {
   const record = useRecordStatus();
+  // 服务端可能下发本表未收录的状态码，直接 RecordStatus[status] 会读到
+  // undefined 再炸一次（“评测状态”整块白屏），这里统一回退到 Unknown。
+  const statusInfo = RecordStatus[record.status] ?? {
+    name: `Unknown (${record.status})`,
+    shortName: '?',
+    color: 'rgb(38, 38, 38)'
+  };
   console.log(record);
   return (
     <>
@@ -47,13 +55,18 @@ export default function App() {
           <span>评测状态</span>
           <span
             style={{
-              color: RecordStatus[record.status].color,
+              color: statusInfo.color,
               fontWeight: 'bold'
             }}
           >
-            {RecordStatus[record.status].name}
+            {statusInfo.name}
           </span>
         </div>
+        {(record.trackingState.tracking ||
+          record.trackingState.timedOut ||
+          record.trackingState.errors.length > 0) && (
+          <TrackingPanel state={record.trackingState} rid={record.id} />
+        )}
         {typeof record.score === 'number' && (
           <div>
             <span>评测分数</span>
@@ -124,14 +137,12 @@ export default function App() {
           </div>
         </>
       )}
-      {record.detail.compileResult !== null && (
+      {record.detail.compileResult !== null && record.status === 2 && (
         <>
           <hr />
           <div>
             <h2>编译信息</h2>
-            <p>
-              {record.detail.compileResult.success ? '编译成功' : '编译失败'}
-            </p>
+            <p>编译失败</p>
             {record.detail.compileResult.message !== null && (
               <pre is="copyable-pre">{record.detail.compileResult.message}</pre>
             )}
@@ -139,6 +150,78 @@ export default function App() {
         </>
       )}
     </>
+  );
+}
+
+/**
+ * 评测跟踪面板：进度条 + 已等待时间 + 各阶段错误。
+ * 目的很直接——让用户一眼看出「在等什么、等多久了、哪一步出错了」，
+ * 而不是对着一动不动的快照猜。
+ */
+function TrackingPanel({ state, rid }: { state: TrackingState; rid: number }) {
+  const { tracking, errors, elapsedMs, timedOut } = state;
+  const seconds = Math.floor(elapsedMs / 1000);
+  return (
+    <div
+      style={{
+        margin: '8px 0',
+        padding: '8px 12px',
+        border: '1px solid var(--vscode-panel-border, #444)',
+        borderRadius: '4px'
+      }}
+    >
+      {tracking && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Spinner />
+            <span>正在评测…已等待 {seconds} 秒</span>
+          </div>
+          {/* 不确定进度条：评测耗时无法预知，只表示“正在进行” */}
+          <div
+            style={{
+              marginTop: '6px',
+              height: '4px',
+              borderRadius: '2px',
+              overflow: 'hidden',
+              backgroundColor: 'var(--vscode-progressBar-background, #333)',
+              opacity: 0.4
+            }}
+          >
+            <div
+              style={{
+                width: '40%',
+                height: '100%',
+                backgroundColor:
+                  'var(--vscode-progressBar-background, #0e70c0)',
+                animation: 'luogu-indeterminate 1.2s ease-in-out infinite'
+              }}
+            />
+          </div>
+        </div>
+      )}
+      {timedOut && !tracking && (
+        <div>
+          等待超过 {Math.floor(elapsedMs / 1000 / 60) || 5} 分钟仍未拿到结果，
+          已停止自动刷新。可点上方 R{rid} 去洛谷查看，或重新执行“查看上次记录”。
+        </div>
+      )}
+      {errors.length > 0 && (
+        <div style={{ marginTop: tracking ? '8px' : 0 }}>
+          <div style={{ fontWeight: 'bold' }}>跟踪过程中的问题：</div>
+          <ul style={{ margin: '4px 0 0 0', paddingLeft: '20px' }}>
+            {errors.map((e, i) => (
+              <li key={i}>
+                [{e.stage}] {e.message}
+              </li>
+            ))}
+          </ul>
+          <div style={{ marginTop: '4px', opacity: 0.8 }}>
+            结果可能仍是好的——自动刷新失败通常只是网络或 WebSocket 问题，点上方
+            R{rid} 去洛谷可直接确认。
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

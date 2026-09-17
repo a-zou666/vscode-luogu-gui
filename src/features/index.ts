@@ -10,6 +10,7 @@ import record from './record';
 import solution from './solution';
 import benben from './benben';
 import contest from './contest';
+import workbench from './workbench';
 
 export default function registerFeatures(context: vscode.ExtensionContext) {
   for (const registerFeature of [
@@ -22,7 +23,8 @@ export default function registerFeatures(context: vscode.ExtensionContext) {
     record,
     solution,
     benben,
-    contest
+    contest,
+    workbench
   ])
     registerFeature(context);
 }

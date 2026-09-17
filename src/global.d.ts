@@ -38,6 +38,12 @@ declare module 'vscode' {
       id?: { pid: string; cid?: number }
     ): Thenable<unknown>;
     function executeCommand(command: 'luogu.record', rid: number): void;
+    function executeCommand(command: 'luogu.workbench'): Thenable<unknown>;
+    function executeCommand(
+      command: 'luogu.sumbitCode',
+      problem?: { pid: string; cid?: number },
+      document?: import('vscode').TextDocument
+    ): Thenable<boolean | undefined>;
   }
 }
 

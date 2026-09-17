@@ -1,0 +1,653 @@
+/* 工作台：科技感 + 与 VS Code 主题变量共存。整体用深色玻璃面板 + 青蓝辉光，
+   颜色一律走 var(--vscode-*) 兜底，保证在浅色主题下也可读。 */
+body {
+  /* 侧栏视图/面板里默认的 8px body 边距会露出背景，统一去掉。 */
+  padding: 0;
+  margin: 0;
+}
+.wb-root {
+  --wb-accent: #35d0d8;
+  --wb-accent-2: #4c8dff;
+  --wb-line: var(--vscode-panel-border, #7f7f7f55);
+  --wb-bg: var(--vscode-editor-background, #1e1e1e);
+  --wb-panel: color-mix(in srgb, var(--wb-bg) 88%, #35d0d8 12%);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  font-family: var(--luogu-font);
+  color: var(--vscode-foreground);
+  background:
+    radial-gradient(
+      1200px 400px at 15% -10%,
+      color-mix(in srgb, var(--wb-accent) 16%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      900px 380px at 100% 0%,
+      color-mix(in srgb, var(--wb-accent-2) 14%, transparent),
+      transparent 65%
+    ),
+    var(--wb-bg);
+}
+
+.wb-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100vh;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* ── 顶栏 ── */
+.wb-topbar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--wb-line);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--wb-accent) 10%, transparent),
+    transparent 45%
+  );
+  backdrop-filter: blur(6px);
+  flex: 0 0 auto;
+}
+.wb-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.wb-logo {
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  font-size: 16px;
+  background: linear-gradient(90deg, var(--wb-accent), var(--wb-accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-transform: uppercase;
+}
+.wb-subtitle {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  letter-spacing: 0.24em;
+}
+
+.wb-tabs {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+.wb-tab {
+  position: relative;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--vscode-foreground);
+  padding: 6px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.wb-tab:hover {
+  background: color-mix(in srgb, var(--wb-accent) 14%, transparent);
+}
+.wb-tab.active {
+  color: #04222a;
+  background: linear-gradient(90deg, var(--wb-accent), var(--wb-accent-2));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--wb-accent) 55%, transparent);
+  font-weight: 600;
+}
+
+.wb-user {
+  margin-left: auto;
+  font-size: 12px;
+}
+.wb-user-name {
+  color: var(--wb-accent);
+  border: 1px solid color-mix(in srgb, var(--wb-accent) 45%, transparent);
+  padding: 3px 12px;
+  border-radius: 999px;
+}
+.wb-signin,
+.wb-gate-btn {
+  color: #04222a;
+  background: linear-gradient(90deg, var(--wb-accent), var(--wb-accent-2));
+  padding: 5px 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── 主体 ── */
+.wb-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.wb-gate {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wb-gate-card {
+  text-align: center;
+  padding: 32px 44px;
+  border: 1px solid var(--wb-line);
+  border-radius: 14px;
+  background: var(--wb-panel);
+  box-shadow: 0 0 32px color-mix(in srgb, var(--wb-accent) 18%, transparent);
+}
+.wb-gate-card h2 {
+  margin: 0 0 8px;
+  letter-spacing: 0.1em;
+}
+.wb-gate-card p {
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: 20px;
+}
+.wb-gate-btn {
+  display: inline-block;
+}
+
+/* ── 通用面板/列表 ── */
+.wb-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.wb-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--wb-line);
+  flex: 0 0 auto;
+}
+.wb-input {
+  flex: 1;
+  min-width: 0;
+  background: color-mix(in srgb, var(--wb-bg) 80%, #000 20%);
+  border: 1px solid var(--wb-line);
+  border-radius: 8px;
+  color: var(--vscode-input-foreground, var(--vscode-foreground));
+  padding: 7px 12px;
+  font-size: 13px;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.wb-input:focus {
+  border-color: var(--wb-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--wb-accent) 30%, transparent);
+}
+.wb-btn {
+  border: 1px solid var(--wb-line);
+  background: color-mix(in srgb, var(--wb-accent) 10%, transparent);
+  color: var(--vscode-foreground);
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.wb-btn:hover {
+  background: color-mix(in srgb, var(--wb-accent) 22%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--wb-accent) 35%, transparent);
+}
+.wb-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+}
+.wb-btn.primary {
+  color: #04222a;
+  background: linear-gradient(90deg, var(--wb-accent), var(--wb-accent-2));
+  font-weight: 600;
+}
+
+.wb-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 16px 24px;
+}
+
+.wb-empty {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* 题目 / 题单 / 题目项 列表 */
+.wb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease;
+}
+.wb-row:hover {
+  background: color-mix(in srgb, var(--wb-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--wb-accent) 35%, transparent);
+}
+.wb-pid {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-weight: 700;
+  color: var(--wb-accent);
+  min-width: 62px;
+}
+.wb-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wb-meta {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
+.wb-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vscode-descriptionForeground);
+  flex: 0 0 auto;
+}
+.wb-status-dot.pass {
+  background: #52c41a;
+  box-shadow: 0 0 8px #52c41a;
+}
+.wb-status-dot.tried {
+  background: #e8a33d;
+}
+.wb-row-actions {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+.wb-row:hover .wb-row-actions {
+  opacity: 1;
+}
+.wb-mini {
+  border: 1px solid var(--wb-line);
+  background: transparent;
+  color: var(--vscode-foreground);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.wb-mini:hover {
+  border-color: var(--wb-accent);
+  color: var(--wb-accent);
+}
+
+/* 分页 */
+.wb-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 0 4px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+/* 题单广场：左频道 / 中题单 / 右题目 三层 */
+.wb-plaza {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.wb-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--wb-line);
+}
+.wb-col:last-child {
+  border-right: none;
+}
+.wb-col-head {
+  padding: 10px 14px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--vscode-descriptionForeground);
+  border-bottom: 1px solid var(--wb-line);
+  flex: 0 0 auto;
+}
+.wb-col-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+}
+.wb-col.channels {
+  flex: 0 0 160px;
+}
+.wb-col.trainings {
+  flex: 0 0 300px;
+}
+.wb-col.problems {
+  flex: 1;
+  min-width: 0;
+}
+
+.wb-chip {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--vscode-foreground);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+.wb-chip:hover {
+  background: color-mix(in srgb, var(--wb-accent) 12%, transparent);
+}
+.wb-chip.active {
+  background: color-mix(in srgb, var(--wb-accent) 22%, transparent);
+  border-color: color-mix(in srgb, var(--wb-accent) 50%, transparent);
+  color: var(--wb-accent);
+  font-weight: 600;
+}
+
+/* ── 提交页 ── */
+.wb-submit {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) 1fr;
+  gap: 16px;
+  padding: 16px;
+  min-height: 0;
+  overflow: auto;
+}
+.wb-card {
+  border: 1px solid var(--wb-line);
+  border-radius: 12px;
+  background: var(--wb-panel);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.wb-card h3 {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--vscode-descriptionForeground);
+  font-weight: 600;
+}
+.wb-file {
+  border: 1px dashed color-mix(in srgb, var(--wb-accent) 40%, transparent);
+  border-radius: 10px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--wb-accent) 6%, transparent);
+}
+.wb-file-name {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 15px;
+  font-weight: 600;
+  word-break: break-all;
+}
+.wb-file-path {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  word-break: break-all;
+  margin-top: 4px;
+}
+.wb-kv {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+.wb-kv b {
+  color: var(--vscode-foreground);
+  font-weight: 600;
+}
+
+.wb-target {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 15px;
+  color: var(--wb-accent);
+}
+
+/* 进度条 */
+.wb-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wb-bg) 70%, #000 30%);
+  overflow: hidden;
+}
+.wb-progress > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--wb-accent), var(--wb-accent-2));
+  transition: width 0.4s ease;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--wb-accent) 60%, transparent);
+}
+.wb-progress.indeterminate > i {
+  width: 35% !important;
+  animation: wb-slide 1.2s ease-in-out infinite;
+}
+@keyframes wb-slide {
+  0% {
+    margin-left: -35%;
+  }
+  100% {
+    margin-left: 100%;
+  }
+}
+
+.wb-stage {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.wb-stage .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vscode-descriptionForeground);
+}
+.wb-stage.running .dot {
+  background: var(--wb-accent);
+  box-shadow: 0 0 8px var(--wb-accent);
+  animation: wb-pulse 1.1s ease-in-out infinite;
+}
+.wb-stage.error {
+  color: #ff8a8a;
+}
+.wb-stage.error .dot {
+  background: #ff6b6b;
+}
+.wb-stage.done .dot {
+  background: #52c41a;
+}
+@keyframes wb-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.wb-errbox {
+  border: 1px solid #ff6b6b55;
+  background: #ff6b6b14;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #ff9b9b;
+}
+.wb-errbox + .wb-errbox {
+  margin-top: 6px;
+}
+.wb-errbox b {
+  color: #ffbdbd;
+}
+
+.wb-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.wb-verdict {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.wb-verdict-name {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.wb-statgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+}
+.wb-stat {
+  border: 1px solid var(--wb-line);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.wb-stat .k {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+.wb-stat .v {
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+
+/* 题目详情内嵌 */
+.wb-detail {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 22px 40px;
+}
+.wb-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.wb-detail-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.wb-detail-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--wb-line);
+}
+
+/* ── 窄宽度自适应（左侧活动栏视图）──
+   同一个工作台既跑在编辑器区的宽面板里，也跑在左侧活动栏的窄视图里。
+   宽面板保持三栏广场 + 两栏提交；侧栏放不下时压成单列纵向堆叠，避免横向溢出。 */
+@media (max-width: 640px) {
+  .wb-topbar {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 8px 12px;
+  }
+  .wb-tabs {
+    margin-left: 0;
+  }
+  .wb-toolbar {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+  }
+  .wb-toolbar .wb-input {
+    flex: 1 1 100%;
+  }
+  /* 三层广场 → 纵向堆叠，各层各自滚动 */
+  .wb-plaza {
+    flex-direction: column;
+    overflow: auto;
+  }
+  .wb-col {
+    border-right: none;
+    border-bottom: 1px solid var(--wb-line);
+  }
+  .wb-col:last-child {
+    border-bottom: none;
+  }
+  .wb-col.channels,
+  .wb-col.trainings {
+    flex: 0 0 auto;
+  }
+  /* 频道数少，横向铺开更省纵向空间 */
+  .wb-col.channels .wb-col-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .wb-col.channels .wb-chip {
+    width: auto;
+    margin-bottom: 0;
+  }
+  .wb-col.trainings {
+    max-height: 38vh;
+  }
+  .wb-col.problems {
+    flex: 1 1 auto;
+    min-height: 220px;
+  }
+  /* 提交页两栏 → 一栏 */
+  .wb-submit {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+  .wb-detail {
+    padding: 12px 14px 32px;
+  }
+  /* 窄栏里「提交」按钮常驻显示，不再依赖 hover（触屏/触控板不友好） */
+  .wb-row-actions {
+    opacity: 1;
+  }
+}

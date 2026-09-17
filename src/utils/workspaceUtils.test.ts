@@ -5,6 +5,40 @@ vi.mock('./api', () => ({ getCaptcha: vi.fn(), parseProblemID: () => '' }));
 
 const { cookieString, praseCookie, getUserSvg, getArticleCategory } =
   await import('./workspaceUtils');
+const { languageFamily, fileExtToLanguage, defaultLanguageVersion } =
+  await import('./shared');
+
+describe('语言自动识别（对齐洛谷官网行为）', () => {
+  it('maps common extensions to a language family', () => {
+    expect(fileExtToLanguage.cpp).toBe('C++');
+    expect(fileExtToLanguage.c).toBe('C');
+    expect(fileExtToLanguage.pas).toBe('Pascal');
+    expect(fileExtToLanguage.rs).toBe('Rust');
+  });
+
+  it('every default language version exists in its family', () => {
+    // 默认版本名写错会让 askForLanguage 静默回退到弹窗（“没自动识别”的典型症状）
+    for (const [family, version] of Object.entries(defaultLanguageVersion)) {
+      const versions = languageFamily[family as keyof typeof languageFamily];
+      expect(versions, `${family} 不在 languageFamily 中`).toBeDefined();
+      expect(
+        Object.keys(versions as object),
+        `${family} 缺少默认版本 ${version}`
+      ).toContain(version);
+    }
+  });
+
+  it('defaults C++/C/Pascal submissions to an O2 build', () => {
+    for (const family of ['C++', 'C', 'Pascal'] as const) {
+      const version = defaultLanguageVersion[family];
+      const entry = (
+        languageFamily[family] as Record<string, { id: number; O2?: true }>
+      )[version];
+      expect(entry, `${family} 默认版本 ${version} 不存在`).toBeDefined();
+      expect(entry.O2, `${family} 默认版本应带 O2`).toBe(true);
+    }
+  });
+});
 
 describe('cookieString', () => {
   it('formats cookie from uid and clientID', () => {

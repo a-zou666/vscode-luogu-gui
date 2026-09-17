@@ -63,8 +63,8 @@ async function updateStatus() {
   }
   try {
     const resp = await getRanklist(monitoredContest.id, 1);
-    const r = resp.userRank;
-    const rankPart = r === undefined ? '' : ` | rank ${r}`;
+    const r = resp?.userRank;
+    const rankPart = r === undefined || r === null ? '' : ` | rank ${r}`;
     lastRankText = rankPart;
     // set composed text below
   } catch {

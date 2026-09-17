@@ -1,29 +1,21 @@
 import * as vscode from 'vscode';
 import TrainingTreeviewProvider from './treeviewProvider';
 
+/**
+ * 题单广场已并入统一工作台面板（`luogu.workbench` 的「题目」页），侧边栏视图
+ * 不再注册。这里保留 provider 与相关命令：provider 仍是题单数据/分页逻辑的
+ * 实现，命令（刷新、加载更多、提交）由工作台与其它入口复用。
+ */
 export default function registerTraining(context: vscode.ExtensionContext) {
   const view = new TrainingTreeviewProvider();
   context.subscriptions.push(view);
-  context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('luogu.training', view)
-  );
-
-  // The view is gated on `luoguLoginStatus` like the other account-backed
-  // views, but VS Code never hides a view whose cached children are stale on
-  // its own, so drop them whenever the session changes. The consumer-side event
-  // only carries the provider, so any Luogu session change triggers a reload.
-  context.subscriptions.push(
-    vscode.authentication.onDidChangeSessions(e => {
-      if (e.provider.id === 'luogu-auth') view.refresh();
-    })
-  );
 
   context.subscriptions.push(
     vscode.commands.registerCommand('luogu.training.refresh', () =>
       view.refresh()
     ),
     vscode.commands.registerCommand('luogu.training.openPlaza', () =>
-      vscode.commands.executeCommand('luogu.traininglist')
+      vscode.commands.executeCommand('luogu.workbench')
     ),
     vscode.commands.registerCommand(
       'luogu.training.loadMore',
@@ -36,8 +28,16 @@ export default function registerTraining(context: vscode.ExtensionContext) {
     ),
     vscode.commands.registerCommand(
       'luogu.training.submit',
-      (node: { kind: 'problem'; pid: string }) =>
-        vscode.commands.executeCommand('luogu.sumbitCode', { pid: node.pid })
+      async (node: { kind: 'problem'; pid: string }) => {
+        // 题单里点提交：题目编号是确定的，文件用“当前正在编辑的代码”。
+        // 若当前没有活动编辑器，submit.ts 会退回文件选择框。
+        const editor = vscode.window.activeTextEditor;
+        return vscode.commands.executeCommand(
+          'luogu.sumbitCode',
+          { pid: node.pid },
+          editor?.document
+        );
+      }
     )
   );
 }

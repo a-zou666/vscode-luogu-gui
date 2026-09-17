@@ -17,6 +17,7 @@ vi.mock('vscode', () => ({ default: {} }));
 const {
   API,
   parseContestDataResponse,
+  parseRecordDataResponse,
   parseProblemID,
   resolveSubmissionProblem,
   CSRF_TOKEN_REGEX,
@@ -157,5 +158,27 @@ describe('resolveSubmissionProblem', () => {
       pid: 'P1001',
       cid: 7
     });
+  });
+});
+
+describe('parseRecordDataResponse', () => {
+  // 回归测试：`/record/{rid}?_contentOnly=1` 返回 DataResponse 形状，
+  // 记录位于 `currentData`。历史上前端误读为 `data`，导致提交后打开记录面板
+  // 报 `Cannot read properties of undefined (reading 'showStatus')`。
+  const record = { record: { id: 1 }, testCaseGroup: [], showStatus: true };
+
+  it('reads the record from currentData (DataResponse shape)', () => {
+    expect(parseRecordDataResponse({ currentData: record })).toBe(record);
+  });
+
+  it('keeps compatibility with Lentille-shaped responses', () => {
+    expect(parseRecordDataResponse({ data: record })).toBe(record);
+  });
+
+  it('throws a locatable error instead of leaking undefined downstream', () => {
+    expect(() => parseRecordDataResponse({})).toThrow('记录不存在或无权查看');
+    expect(() =>
+      parseRecordDataResponse({ currentData: undefined, data: undefined })
+    ).toThrow('记录不存在或无权查看');
   });
 });

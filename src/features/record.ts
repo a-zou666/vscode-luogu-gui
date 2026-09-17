@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { fetchRecords, fetchResult } from '@/utils/api';
 import { getReactWebviewHtml } from '@/utils/html';
-import { createWebsocket, WebsocketSchema } from '@/utils/websocket';
 import {
   processAxiosError,
   getWebviewViewColumn
@@ -9,10 +8,7 @@ import {
 import { RecordData } from 'luogu-api';
 import { MessageTypes } from '@w/views/record/data';
 import { getLatestRecordId } from './recordList';
-
-type RecordWebsocket = Awaited<
-  ReturnType<typeof createWebsocket<WebsocketSchema.RecordTrack>>
->;
+import { isPendingStatus, trackRecord } from './recordTrack';
 
 async function record(record: RecordData) {
   const panel = vscode.window.createWebviewPanel(
@@ -32,111 +28,38 @@ async function record(record: RecordData) {
   panel.webview.html = getReactWebviewHtml(panel.webview, 'webview-record.js', {
     'lentille-context': record satisfies RecordData
   });
-  if (record.record.status === 0 || record.record.status === 1)
-    connectWebsocket(record.record.id, panel);
-}
-
-function connectWebsocket(rid: number, panel: vscode.WebviewPanel) {
-  let pending = true;
-  let disposed = false;
-  let connection: RecordWebsocket | undefined;
-  const panelDisposable = panel.onDidDispose(() => {
-    disposed = true;
-    pending = false;
-    connection?.dispose();
-  });
-  new Promise<void>((resolve, reject) =>
-    createWebsocket<WebsocketSchema.RecordTrack>(
-      'record.track',
-      rid.toString()
-    ).then(
-      ws => {
-        connection = ws;
-        if (disposed) {
-          ws.dispose();
-          resolve();
-          return;
-        }
-        panel.webview.postMessage({
-          type: 'updateRecord',
-          data: {
-            ...ws.data.record,
-            memory: +ws.data.record.memory,
-            time: +ws.data.record.time,
-            score: ws.data.record.score && +ws.data.record.score
-          }
-        } satisfies MessageTypes);
-        if (ws.data.status !== 0 && ws.data.status !== 1) {
-          resolve();
-          pending = false;
-          ws.dispose();
-          return;
-        }
-        ws.event.event(e => {
-          if (!pending) return;
-          if (e.type === 'error') {
-            ws.dispose();
-            pending = false;
-            reject(e.data);
-          } else if (e.type === 'close') {
-            pending = false;
-            reject(new Error('连接意外关闭'));
-          } else if (e.data.type === 'status_push') {
-            panel.webview.postMessage({
-              type: 'updateRecord',
-              data: e.data.record
-            } satisfies MessageTypes);
-            if (e.data.record.status === 2)
-              fetchResult(rid).then(x => {
-                if (!disposed)
-                  panel.webview.postMessage({
-                    type: 'updateRecord',
-                    data: x.record
-                  } satisfies MessageTypes);
-              });
-            if (e.data.record.status !== 0 && e.data.record.status !== 1) {
-              pending = false;
-              resolve();
-              ws.dispose();
-            }
-          }
-        });
-      },
-      e => reject(e)
-    )
-  )
-    .then(() => (disposed ? undefined : fetchResult(rid)))
-    .then(x => {
-      if (x && !disposed)
-        return panel.webview.postMessage({
-          type: 'updateRecord',
-          data: x.record
-        } satisfies MessageTypes);
-    })
-    .catch(e => {
-      if (disposed) return;
-      console.error('获取记录时 WebSocket 连接失败', e);
-      vscode.window
-        .showErrorMessage(
-          `获取记录时 WebSocket 连接失败` +
-            (e instanceof Error ? `：${e.message}` : ''),
-          '重试'
-        )
-        .then(s => s === '重试' && !disposed && connectWebsocket(rid, panel));
-    })
-    .finally(() => panelDisposable.dispose());
+  // 还没出结果才去跟踪；已完成的记录直接展示快照即可。
+  if (isPendingStatus(record.record.status))
+    trackRecord(
+      record.record.id,
+      event => void panel.webview.postMessage(event satisfies MessageTypes),
+      listener => panel.onDidDispose(() => listener.dispose())
+    );
 }
 
 export default function registerRecord(context: vscode.ExtensionContext) {
   context.subscriptions.push(
-    vscode.commands.registerCommand('luogu.record', rid => {
+    vscode.commands.registerCommand('luogu.record', async rid => {
       if (typeof rid !== 'number') throw new TypeError('rid must be a number');
-      fetchResult(rid)
-        .then(record => {
-          if (!record.showStatus) record.record.status = -1;
-          return record;
-        })
-        .then(record, processAxiosError('获取记录'));
+      // 提交后（submit.ts）会调用本命令，需要真正把记录详情面板打开；
+      // 原先这里漏了调用 record()，导致“提交成功但看不到记录”。
+      let data: RecordData;
+      try {
+        data = await fetchResult(rid);
+      } catch (e) {
+        processAxiosError('获取记录')(e);
+        return false;
+      }
+      if (!data?.record) {
+        vscode.window.showErrorMessage('获取记录失败：记录数据为空');
+        return false;
+      }
+      // 注意：`showStatus` 只表示“状态是否对当前用户可见”（如比赛封榜、他人记录），
+      // 它和 `record.status` 是两回事。曾经这里把 showStatus 为假当成“状态不可知”
+      // 并把 status 强行改成 -1（Unshown），结果连正常的评测结果也一起被隐藏了。
+      // 状态以服务端下发的 record.status 为准，不要在这里改写它。
+      void record(data);
+      return true;
     }),
     vscode.commands.registerCommand('luogu.lastRecord', async () => {
       const records = await fetchRecords().catch(
