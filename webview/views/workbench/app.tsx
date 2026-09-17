@@ -90,10 +90,19 @@ export default function App() {
               </a>
             </div>
           </div>
-        ) : tab === 'problem' ? (
-          <ProblemPage onSubmitProblem={openSubmit} />
         ) : (
-          <SubmitPage target={submitTarget} />
+          // 两个页签都保持挂载，只切显隐 —— 之前是 `tab === 'problem' ? A : B`，
+          // 切页签会卸载另一个组件，题目页的下钻位置（频道→题单→题目→题面）
+          // 和已拉到的数据全部丢掉，回来只能从根目录重新点一遍。
+          // 顺带的好处：切到提交页后，评测进度仍在后台更新，回来即见最新结果。
+          <>
+            <div className="wb-tabpane" hidden={tab !== 'problem'}>
+              <ProblemPage onSubmitProblem={openSubmit} />
+            </div>
+            <div className="wb-tabpane" hidden={tab !== 'submit'}>
+              <SubmitPage target={submitTarget} />
+            </div>
+          </>
         )}
       </main>
     </div>

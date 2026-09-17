@@ -75,8 +75,11 @@ const requestValidators = {
   workbenchSubmit: (data: unknown) =>
     hasShape(data, {
       pid: isString,
-      cid: value => value === undefined || isInteger(value)
-    })
+      cid: value => value === undefined || isInteger(value),
+      // 首次提交不带 captcha，被要求时用户填完再带上来重发
+      captcha: value => value === undefined || isString(value)
+    }),
+  workbenchCaptcha: isVoid
 } satisfies Record<keyof MessageTypes, Validator>;
 
 const uuidPattern =

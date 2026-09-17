@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --vscode-foreground: #cccccc;
+    --vscode-descriptionForeground: #9d9d9d;
+    --vscode-editor-font-family: 'Consolas', monospace;
+    --vscode-input-foreground: #cccccc;
+  }
+  html, body { margin: 0; padding: 0; background: #1e1e1e; }
+  body { color: #ccc; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
+  #frame { height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+           border-right: 2px dashed #ff5555; box-sizing: border-box; }
+</style>
+</head>
+<body data-vscode-theme-kind="vscode-dark">
+<div id="frame"><div id="app"></div></div>
+<script>
+  // ── 错误采集器（零运行时错误本身就是要交付的证据）──
+  window.__err = [];
+  window.addEventListener('error', e => window.__err.push('E:' + e.message));
+  window.addEventListener('unhandledrejection', e => {
+    window.__err.push('R:' + (e.reason && e.reason.message || e.reason));
+  });
+
+  // ── harness 1: acquireVsCodeApi mock ──
+  // 收到请求后延迟派发回包，包络 {uuid, data|error}（前端靠 uuid resolve）
+  var CAPTCHA_IMG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==';
+  var MODE = new URLSearchParams(location.search).get('mode') || 'normal';
+  window.acquireVsCodeApi = function () {
+    return {
+      postMessage: function (msg) {
+        var reply = function (data, error) {
+          setTimeout(function () {
+            window.dispatchEvent(new MessageEvent('message', {
+              data: { uuid: msg.uuid, data: data, error: error }
+            }));
+          }, 20);
+        };
+        if (msg.type === 'workbenchLoginStatus') return reply({ loggedIn: true, username: 'azhou' });
+        if (msg.type === 'workbenchCaptcha') return reply({ image: CAPTCHA_IMG });
+        if (msg.type === 'workbenchSubmit') {
+          // mode=captcha：首次提交要求验证码；带上 captcha 后成功
+          if (MODE === 'captcha' && !msg.data.captcha) return reply({ needCaptcha: true });
+          return reply({ rid: 12345 });
+        }
+        return reply(undefined);
+      }
+    };
+  };
+</script>
+<script src="../../dist/webview-workbench.js"></script>
+<script>
+  // ── 探针：把几何测量写进 documentElement 的 data-report，供 --dump-dom 抓取 ──
+  var W = parseInt(new URLSearchParams(location.search).get('w') || '420', 10);
+  document.getElementById('frame').style.width = W + 'px';
+
+  // 默认停在「题目」页签，先切到「提交」再量。
+  setTimeout(function () {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('.wb-tab'));
+    var submitTab = tabs.filter(function (t) { return t.textContent.trim() === '提交'; })[0];
+    if (submitTab) submitTab.click();
+  }, 600);
+
+  function measure() {
+    var o = { vw: window.innerWidth, frameW: W, mode: MODE };
+    var q = function (sel) {
+      var e = submitPane().querySelector(sel);
+      if (!e) return null;
+      var r = e.getBoundingClientRect();
+      return { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) };
+    };
+    o.tabPanes = document.querySelectorAll('.wb-tabpane').length;
+    var panes = document.querySelectorAll('.wb-tabpane');
+    var subPane = submitPane();
+    o.submitPaneHidden = subPane === document ? null : subPane.hidden;
+    o.paneCount = panes.length;
+    // 容器链高度：用来判断输入框是不是被父级拉伸的
+    o.chain = {
+      root: (document.querySelector('.wb-root') || {}).offsetHeight || null,
+      submit: (document.querySelector('.wb-submit') || {}).offsetHeight || null,
+      pane: subPane === document ? null : subPane.offsetHeight,
+      winH: window.innerHeight
+    };
+    o.targetInput = q('.wb-target');
+    o.targetRow = q('.wb-target-row');
+    o.card = q('.wb-card');
+    o.captcha = q('.wb-captcha');
+    o.captchaImg = q('.wb-captcha-img');
+    o.captchaRow = q('.wb-captcha-row');
+    // 验证码区里的就地提交按钮（用户反馈：验证码没有提交按钮）
+    o.captchaBtn = q('.wb-captcha .wb-btn');
+    o.submitBtn = q('.wb-btn.primary:not([disabled])');
+    o.captchaText = (submitPane().querySelector('.wb-captcha-label') || {}).textContent || null;
+    var fr = document.getElementById('frame');
+    o.overflowX = fr.scrollWidth > W + 2;
+    o.err = window.__err.join('|');
+    document.documentElement.setAttribute('data-report', JSON.stringify(o));
+  }
+
+  // mode=captcha 时要先填题号、再点「提交评测」把验证码区逼出来。
+  // ⚠️ 题目页现在也常驻 DOM（双页 + hidden），所有选择器必须限定在提交页里，
+  // 否则会命中题目页的同名元素（提交按钮一开始就是 disabled，点了也没反应）。
+  // 写成版本无关的：既能跑改动后的双页结构，也能跑改动前单页结构（用于对照）。
+  function submitPane() {
+    var sub = document.querySelector('.wb-submit');
+    if (!sub) return document;
+    return sub.closest('.wb-tabpane') || document;
+  }
+  function qIn(sel) {
+    var e = submitPane().querySelector(sel);
+    if (!e) return null;
+    var r = e.getBoundingClientRect();
+    return {
+      x: Math.round(r.left),
+      y: Math.round(r.top),
+      w: Math.round(r.width),
+      h: Math.round(r.height)
+    };
+  }
+
+  setTimeout(function () {
+    var pane = submitPane();
+    var input = pane.querySelector('.wb-target');
+    if (input) {
+      // React 受控输入：必须走 native setter 才能让 onChange 收到值
+      var setter = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype,
+        'value'
+      ).set;
+      setter.call(input, 'P1001');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    if (MODE === 'captcha') {
+      var go = Array.prototype.slice
+        .call(pane.querySelectorAll('.wb-btn'))
+        .filter(function (b) {
+          return b.textContent.trim().indexOf('提交') === 0;
+        })[0];
+      if (go) go.click();
+      setTimeout(measure, 800);
+    } else {
+      measure();
+    }
+  }, 1100);
+</script>
+</body>
+</html>

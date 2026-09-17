@@ -1,4 +1,4 @@
-const { default: React, useEffect, useState } = await import('react');
+const { default: React, useEffect, useRef, useState } = await import('react');
 const { default: send } = await import('@w/webviewRequest');
 const { Spinner } = await import('@w/components');
 const { RecordStatus } = await import('@/utils/shared');
@@ -34,6 +34,14 @@ export default function SubmitPage({
   const [fatal, setFatal] = useState<string | undefined>(undefined);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [rid, setRid] = useState<number | undefined>(undefined);
+  // 验证码：**按需出现**。服务端只在必要时（风控/频繁提交）才要求，
+  // 没要求就不占版面 —— 常态下提交页和以前一样干净。
+  const [needCaptcha, setNeedCaptcha] = useState(false);
+  const [captcha, setCaptcha] = useState('');
+  const [captchaImage, setCaptchaImage] = useState<string | undefined>(
+    undefined
+  );
+  const captchaInputRef = useRef<HTMLInputElement>(null);
 
   // 目标题目变化（在题目页点了「提交本题」）时同步过来
   useEffect(() => {
@@ -81,9 +89,26 @@ export default function SubmitPage({
     return () => clearInterval(t);
   }, [state]);
 
-  const submit = async () => {
+  /** 拉一张新的图形验证码（含点图刷新）。 */
+  const refreshCaptcha = async () => {
+    try {
+      const { image } = await send('workbenchCaptcha', undefined);
+      setCaptchaImage(image);
+    } catch {
+      setCaptchaImage(undefined);
+    }
+  };
+
+  const submit = async (captchaValue?: string) => {
     if (!pid.trim()) {
       setFatal('请先填写题号');
+      return;
+    }
+    // 已进入「需要验证码」状态但没填码：直接拦下。带着空码发请求必然被服务端
+    // 判成「提供了验证码但不对」，白跑一轮还让用户以为码错了。
+    // （按钮有 disabled，但 Enter 键绕得过，所以守卫要放在这里。）
+    if (needCaptcha && !captchaValue?.trim()) {
+      setFatal('请先填写验证码');
       return;
     }
     setState('submitting');
@@ -95,8 +120,20 @@ export default function SubmitPage({
     try {
       const res = await send('workbenchSubmit', {
         pid: pid.trim(),
-        cid: target?.cid
+        cid: target?.cid,
+        // 空串要转成 undefined：带着 captcha:'' 提交会被服务端当成
+        // 「提供了验证码但不对」，而本意是「这次还没填」。
+        captcha: captchaValue || undefined
       });
+      // 服务端要求验证码：不是失败，是把验证码输入区露出来。
+      // 输入框留在原地，用户填完再点一次提交（带着 captcha 重发）。
+      if ('needCaptcha' in res) {
+        setNeedCaptcha(true);
+        setState('idle');
+        void refreshCaptcha();
+        return;
+      }
+      setNeedCaptcha(false);
       setRid(res.rid);
       // 提交成功 → 立马进入「评测中」，后续由扩展侧推送更新
       setState('judging');
@@ -109,24 +146,80 @@ export default function SubmitPage({
   const percent = state === 'done' ? 100 : STAGE_PERCENT[state] ?? 0;
   const judging = state === 'submitting' || state === 'judging';
 
+  // 验证码区一出现就把焦点送进输入框 —— 此刻用户唯一要做的事就是敲验证码，
+  // 不该还要先手动点一下。judging 期间不抢焦点（避免打断进行中的提交）。
+  useEffect(() => {
+    if (needCaptcha && !judging) captchaInputRef.current?.focus();
+  }, [needCaptcha, judging]);
+
   return (
     <div className="wb-submit">
       <div className="wb-card">
         <h3>提交目标</h3>
-        <input
-          className="wb-input wb-target"
-          placeholder="题号，如 P1001"
-          value={pid}
-          onChange={e => setPid(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && void submit()}
-          disabled={judging}
-        />
+        <div className="wb-target-row">
+          <input
+            className="wb-input wb-target"
+            placeholder="题号，如 P1001"
+            value={pid}
+            onChange={e => setPid(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && void submit(captcha)}
+            disabled={judging}
+          />
+        </div>
+        {/* 验证码：服务端要求时才出现。没有要求时这块完全不渲染，
+            不占版面、也不需要用户理解它是什么。 */}
+        {needCaptcha && (
+          <div className="wb-captcha">
+            <div className="wb-captcha-label">
+              洛谷要求填写验证码后才能继续提交
+            </div>
+            <div className="wb-captcha-row">
+              <input
+                ref={captchaInputRef}
+                className="wb-input"
+                placeholder="输入右侧图形验证码"
+                value={captcha}
+                onChange={e => setCaptcha(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && void submit(captcha)}
+                disabled={judging}
+              />
+              {captchaImage ? (
+                <img
+                  className="wb-captcha-img"
+                  src={captchaImage}
+                  alt="验证码"
+                  title="点击换一张"
+                  onClick={() => void refreshCaptcha()}
+                />
+              ) : (
+                <button
+                  className="wb-captcha-img wb-captcha-refresh"
+                  onClick={() => void refreshCaptcha()}
+                  disabled={judging}
+                >
+                  换一张
+                </button>
+              )}
+            </div>
+            {/* 验证码自己的提交按钮：底部那个「提交评测」在「当前文件」卡片之下，
+                验证码出现时它在视口外，用户填完码还得往下找。这里就地放一个，
+                和输入框同区，填完直接点。空码时禁用，避免提交必然失败的请求。 */}
+            <button
+              className="wb-btn primary wb-captcha-submit"
+              onClick={() => void submit(captcha)}
+              disabled={judging || !captcha.trim()}
+            >
+              {judging ? '提交中……' : '提交验证码'}
+            </button>
+          </div>
+        )}
         <h3>当前文件</h3>
         <FileCard />
         <button
           className="wb-btn primary"
-          onClick={() => void submit()}
-          disabled={judging || !pid.trim()}
+          onClick={() => void submit(captcha)}
+          disabled={judging || !pid.trim() || (needCaptcha && !captcha.trim())}
+          title={needCaptcha && !captcha.trim() ? '请先填写验证码' : undefined}
         >
           {judging ? '提交中……' : '提交评测'}
         </button>

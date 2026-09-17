@@ -2,7 +2,9 @@ import * as vscode from 'vscode';
 import type { ProblemSummary } from 'luogu-api';
 import { getReactWebviewHtml } from '@/utils/html';
 import {
+  getCaptcha,
   getProblemData,
+  NeedCaptchaError,
   normalizeListResult,
   searchProblemList,
   searchTrainingdetail,
@@ -42,7 +44,11 @@ const attachedWebviews = new WeakSet<vscode.Webview>();
  * 里内联跟踪评测。这里保留同一套前置校验（有活动编辑器 / 文件已保存），
  * 但把语言选择交给 `askForLanguage`（会走用户的默认语言配置），行为一致。
  */
-async function submitFromWorkbench(pid: string, cid?: number) {
+async function submitFromWorkbench(
+  pid: string,
+  cid?: number,
+  captcha?: string
+) {
   const editor = vscode.window.activeTextEditor;
   if (!editor) throw new Error('请先打开要提交的代码文件');
   const document = editor.document;
@@ -59,9 +65,17 @@ async function submitFromWorkbench(pid: string, cid?: number) {
   const ext = document.fileName.split('.').pop() ?? '';
   const lang = await askForLanguage(ext);
   if (lang === undefined) throw new Error('已取消提交');
-  return {
-    rid: await submitCode({ pid, cid }, document.getText(), lang.id, lang.O2)
-  };
+  // captchaMode:'throw' —— 需要验证码时抛 NeedCaptchaError 而不是弹原生面板，
+  // 由提交页把验证码画在自己页面里（用户提的「塞到提交页面」）。
+  const rid = await submitCode(
+    { pid, cid },
+    document.getText(),
+    lang.id,
+    lang.O2,
+    captcha,
+    { captchaMode: 'throw' }
+  );
+  return { rid };
 }
 
 /** webview 选项：活动栏视图与浮动面板共用（含 command: 链接白名单）。 */
@@ -82,11 +96,15 @@ async function getLoginStatus() {
 }
 
 /**
- * 给一个 webview 接上工作台的全部请求处理器，并注入页面。
+ * 给一个 webview 接上工作台的全部请求处理器。
  *
  * 活动栏视图（WebviewView）与浮动面板（WebviewPanel）共用这一份实现 —— 两套
  * 入口各写一份的话，行为迟早会漂移。`onDispose` 由调用方提供，用于宿主销毁时
  * 停掉评测跟踪。
+ *
+ * 返回值表示「这次是不是首次接管」：`resolveWebviewView` 在视图每次变为可见时
+ * 都可能被调用，调用方据此决定是否注入 html —— 重复注入会把 webview 文档整个
+ * 换掉，保留下来的 React 状态（下钻位置、已加载数据）随之清空。
  *
  * 注意这里刻意用「函数内直接调 useWebviewResponseHandle」而不是先建好一个
  * handlers 对象再传：泛型 K 要从 handles 的键推导，对象字面量才有上下文类型，
@@ -95,10 +113,10 @@ async function getLoginStatus() {
 function attachWorkbench(
   webview: vscode.Webview,
   onDispose: (listener: { dispose: () => void }) => void
-) {
+): boolean {
   // 同一个 webview 只接一次：活动栏视图切走再切回会重新 resolve，
   // 重复注册监听器会让每个请求被处理多次（见 attachedWebviews 注释）。
-  if (attachedWebviews.has(webview)) return;
+  if (attachedWebviews.has(webview)) return false;
   attachedWebviews.add(webview);
 
   // 推送事件走 {type, ...}，响应走 {data|error, uuid}：两条通道靠包络区分，
@@ -172,34 +190,62 @@ function attachWorkbench(
       };
     },
     workbenchProblemDetail: ({ pid }) => getProblemData(pid),
-    workbenchSubmit: async ({ pid, cid }) => {
+    workbenchSubmit: async ({ pid, cid, captcha }) => {
       // 不复用 luogu.sumbitCode：那条链路只回 boolean，拿不到 rid，
       // 没法在这里实时跟评测。这里自己走一遍提交，然后把 rid 的跟踪
       // 事件推给同一个 webview（提交页内联展示评测进度）。
-      const { rid } = await submitFromWorkbench(pid, cid);
-      trackRecord(rid, event => post(event), onDispose);
-      return { rid };
-    }
+      try {
+        const { rid } = await submitFromWorkbench(pid, cid, captcha);
+        trackRecord(rid, event => post(event), onDispose);
+        return { rid };
+      } catch (e) {
+        // 验证码不是「失败」：把控制权交回提交页，让它画验证码输入区。
+        // 若这里照常抛出去，前端只会看到一个红色错误框，用户无从下手。
+        if (e instanceof NeedCaptchaError) return { needCaptcha: true };
+        throw e;
+      }
+    },
+    workbenchCaptcha: async () => ({
+      // getCaptcha 回 Buffer，转成 data URI 供 <img src> 直接用
+      image: `data:image/png;base64,${(await getCaptcha()).toString('base64')}`
+    })
   });
+
+  return true;
 }
 
 export default function registerWorkbench(context: vscode.ExtensionContext) {
   // ── 入口一：左侧活动栏图标（主要入口）──
   // 点图标即在侧栏里看到完整工作台，不用记快捷键、也不用翻命令面板。
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(WORKBENCH_VIEW_ID, {
-      resolveWebviewView: view => {
-        view.webview.options = getWebviewOptions();
-        attachWorkbench(view.webview, listener =>
-          view.onDidDispose(() => listener.dispose())
-        );
-        view.webview.html = getReactWebviewHtml(
-          view.webview,
-          'webview-workbench.js',
-          {}
-        );
+    vscode.window.registerWebviewViewProvider(
+      WORKBENCH_VIEW_ID,
+      {
+        resolveWebviewView: view => {
+          view.webview.options = getWebviewOptions();
+          // 只有首次接管才注入 html：视图再次可见时 resolveWebviewView 会重入，
+          // 而 `webview.html = ...` 是**整体替换文档**，会把保留下来的 React 状态
+          // （下钻位置、已加载的题单/题面）连同 DOM 一起清掉。
+          if (
+            attachWorkbench(view.webview, listener =>
+              view.onDidDispose(() => listener.dispose())
+            )
+          )
+            view.webview.html = getReactWebviewHtml(
+              view.webview,
+              'webview-workbench.js',
+              {}
+            );
+        }
+      },
+      {
+        // 用户切到「资源管理器」等其它活动栏图标再切回来时，VS Code 默认会释放
+        // 侧栏 webview 的文档并在恢复时重新注入 html —— React 整棵树重挂载，
+        // 题目页的下钻位置（频道 → 题单 → 题目 → 题面）和已加载数据全丢，
+        // 表现就是「每次都得从根目录重新点一遍」。这里和浮动面板保持同一策略。
+        webviewOptions: { retainContextWhenHidden: true }
       }
-    })
+    )
   );
 
   // ── 入口二：状态栏按钮 ──

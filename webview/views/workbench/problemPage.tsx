@@ -9,6 +9,9 @@ const { default: send } = await import('@w/webviewRequest');
 const { Spinner, ProblemDifficultyTag } = await import('@w/components');
 const { default: ArticleViewer } = await import('@w/markdownViewer');
 const { getDifficulty } = await import('@/utils/shared');
+// 样例的输入/输出框要带「复制」按钮：customized built-in element 必须先注册，
+// 否则 <pre is="copyable-pre"> 会被当成普通 pre（按钮不出现，也不报错）。
+await import('@w/copyablePreElement');
 
 import './app.css';
 import type {
@@ -618,14 +621,29 @@ function ProblemDetail({
               <span>难度 {getDifficulty(problem.difficulty).name}</span>
             </div>
             <ArticleViewer>{content}</ArticleViewer>
-            {problem.samples?.map((s, i) => (
-              <div key={i}>
-                <h3>样例 {i + 1}</h3>
-                <pre>
-                  <code>{`输入\n${s[0] ?? ''}\n输出\n${s[1] ?? ''}`}</code>
-                </pre>
+            {problem.samples?.length ? (
+              <div className="wb-samples">
+                <h3>输入输出样例</h3>
+                {problem.samples.map((s, i) => (
+                  // 输入与输出分成两块，各自可复制 —— 挤在一个 <pre> 里的话
+                  // 用户点复制拿到的是「输入\n...\n输出\n...」，得手动删掉标签行。
+                  <div className="wb-sample" key={i}>
+                    <div className="wb-sample-col">
+                      <h4>输入 #{i + 1}</h4>
+                      <pre is="copyable-pre">
+                        <code>{s[0] ?? ''}</code>
+                      </pre>
+                    </div>
+                    <div className="wb-sample-col">
+                      <h4>输出 #{i + 1}</h4>
+                      <pre is="copyable-pre">
+                        <code>{s[1] ?? ''}</code>
+                      </pre>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : null}
           </>
         )}
       </div>

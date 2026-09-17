@@ -704,12 +704,36 @@ export const getErrorMessage = (err: unknown) => {
   return String(err);
 };
 
+/**
+ * 服务端要求验证码时抛出。
+ *
+ * 老链路（命令面板提交）在 `submitCode` 内部直接弹面板问验证码；工作台提交页
+ * 要把验证码画在自己的页面里，所以需要一条「不弹窗、把控制权交回调用方」的通道：
+ * `captchaMode: 'throw'` 时改为抛这个错误，由调用方决定怎么采集验证码。
+ */
+export class NeedCaptchaError extends Error {
+  constructor(message = '验证码错误') {
+    super(message);
+    this.name = 'NeedCaptchaError';
+  }
+}
+
+export interface SubmitCodeOptions {
+  /**
+   * 需要验证码时的行为：
+   *  - `prompt`（默认，保持原有行为）：弹验证码面板 + 输入框，采集后自动重试；
+   *  - `throw`：抛 `NeedCaptchaError`，交给调用方（工作台提交页内联采集）。
+   */
+  captchaMode?: 'prompt' | 'throw';
+}
+
 export async function submitCode(
   { pid, cid }: { pid: string; cid?: number },
   code: string,
   language: number = 0,
   enableO2: boolean = false,
-  captcha?: string
+  captcha?: string,
+  options: SubmitCodeOptions = {}
 ) {
   const url =
     `/fe/api/problem/submit/${pid}` + (cid ? `?contestId=${cid}` : '');
@@ -724,9 +748,10 @@ export async function submitCode(
     .catch(async e => {
       if (!isAxiosError(e) || e.response?.data?.errorMessage !== '验证码错误')
         throw e;
+      if (options.captchaMode === 'throw') throw new NeedCaptchaError();
       const input = await askForCaptcha();
       if (input === undefined) throw new Error('已取消');
-      return submitCode({ pid, cid }, code, language, enableO2, input);
+      return submitCode({ pid, cid }, code, language, enableO2, input, options);
     });
 }
 export async function checkCookie(oldCookie: Cookie) {

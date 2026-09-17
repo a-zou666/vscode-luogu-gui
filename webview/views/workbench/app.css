@@ -133,6 +133,20 @@ body {
   overflow: hidden;
 }
 
+/* 页签容器：题目页与提交页**同时挂载**，靠 hidden 切显隐。
+   ⚠️ `[hidden]` 必须显式写 display:none —— 浏览器默认样式 `[hidden]{display:none}`
+   会被这里的 `display:flex` 覆盖掉，两个页面就会叠在一起显示。 */
+.wb-tabpane {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.wb-tabpane[hidden] {
+  display: none;
+}
+
 .wb-gate {
   flex: 1;
   display: flex;
@@ -188,6 +202,15 @@ body {
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
+}
+/* ⚠️ `.wb-input` 的 `flex:1` 是给横排工具栏（.wb-toolbar）用的。
+   它一旦落进纵向 flex 容器（.wb-card 是 flex column），`flex:1` 会沿**纵轴**
+   生长，输入框被拉成占满剩余高度的大方块 —— 提交页「提交目标」框过大就是这么来的。
+   这里在纵向场景里把纵向生长关掉，只保留横向。 */
+.wb-card .wb-input,
+.wb-target-row .wb-input {
+  flex: 0 0 auto;
+  width: 100%;
 }
 .wb-input:focus {
   border-color: var(--wb-accent);
@@ -428,10 +451,58 @@ button.wb-row {
   font-weight: 600;
 }
 
+.wb-target-row {
+  display: flex;
+}
 .wb-target {
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 15px;
   color: var(--wb-accent);
+}
+
+/* 验证码区：服务端要求时才渲染，所以这里只管「长什么样」，不管显隐。
+   图形码与输入框同一行，点图即换一张（老链路的 askForCaptcha 也是这个交互）。 */
+.wb-captcha {
+  border: 1px solid var(--wb-line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--wb-accent) 8%, transparent);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wb-captcha-label {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+.wb-captcha-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.wb-captcha-row .wb-input {
+  flex: 1 1 auto;
+  width: auto;
+}
+.wb-captcha-img {
+  flex: 0 0 auto;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--wb-line);
+  background: #fff;
+  cursor: pointer;
+}
+.wb-captcha-refresh {
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--vscode-foreground);
+  font-family: inherit;
+}
+/* 验证码区自己的提交按钮。底部「提交评测」在「当前文件」卡片之下，
+   验证码出现时往往已滚出视口，所以这里就地给一个同区按钮。 */
+.wb-captcha-submit {
+  width: 100%;
+  padding: 6px 14px;
 }
 
 /* 进度条 */
@@ -573,6 +644,40 @@ button.wb-row {
   border-bottom: 1px solid var(--wb-line);
 }
 
+/* 输入输出样例：每个样例一行两列（输入 | 输出），窄栏压成上下两块。
+   写法对齐 viewProblem 的 .problemSamples，保证两个入口看题体验一致。 */
+.wb-samples {
+  margin-top: 18px;
+}
+.wb-samples > h3 {
+  font-size: 15px;
+  margin: 0 0 10px;
+}
+.wb-sample {
+  display: grid;
+  grid-template-columns: 50% 50%;
+  column-gap: 12px;
+  margin-bottom: 14px;
+}
+.wb-sample-col {
+  min-width: 0;
+}
+.wb-sample-col > h4 {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-descriptionForeground);
+  letter-spacing: 0.06em;
+}
+/* 样例框用等宽字体，长行横向滚动而不是撑破容器 */
+.wb-sample-col pre {
+  margin: 0;
+}
+.wb-sample-col pre > code {
+  font-family: var(--vscode-editor-font-family, monospace);
+  white-space: pre;
+}
+
 /* ── 窄宽度自适应（左侧活动栏视图）──
    同一个工作台既跑在编辑器区的宽面板里，也跑在左侧活动栏的窄视图里。
    宽面板保持三栏广场 + 两栏提交；侧栏放不下时压成单列纵向堆叠，避免横向溢出。 */
@@ -602,6 +707,11 @@ button.wb-row {
   }
   .wb-detail {
     padding: 12px 14px 32px;
+  }
+  /* 样例两列并排会让窄栏里的代码横向溢出，压成上下两块 */
+  .wb-sample {
+    grid-template-columns: 1fr;
+    row-gap: 10px;
   }
   /* 窄栏里「提交」按钮常驻显示，不再依赖 hover（触屏/触控板不友好） */
   .wb-row-actions {

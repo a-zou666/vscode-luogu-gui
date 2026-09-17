@@ -185,8 +185,18 @@ type WorkbenchProblemDetail = WebviewMessage<
   WebviewResponseMessage<import('luogu-api').ProblemData>
 >;
 type WorkbenchSubmit = WebviewMessage<
-  WebviewRequestMessage<'workbenchSubmit', { pid: string; cid?: number }>,
-  WebviewResponseMessage<{ rid: number }>
+  WebviewRequestMessage<
+    'workbenchSubmit',
+    { pid: string; cid?: number; captcha?: string }
+  >,
+  // 两种结局：拿到 rid（进入评测跟踪），或服务端要求验证码。
+  // 后者不是错误 —— 提交页据此把验证码画出来，用户填完再带着 captcha 重发。
+  WebviewResponseMessage<{ rid: number } | { needCaptcha: true }>
+>;
+type WorkbenchCaptcha = WebviewMessage<
+  WebviewRequestMessage<'workbenchCaptcha', void>,
+  // 直接给 data URI，前端 <img src> 即用，省掉一次 base64 拼装
+  WebviewResponseMessage<{ image: string }>
 >;
 type MessageTypes = MessageTypesBase<
   // Add new types in this array.
@@ -220,7 +230,8 @@ type MessageTypes = MessageTypesBase<
     WorkbenchTrainingList,
     WorkbenchTrainingDetail,
     WorkbenchProblemDetail,
-    WorkbenchSubmit
+    WorkbenchSubmit,
+    WorkbenchCaptcha
   ]
 >;
 export default MessageTypes;
