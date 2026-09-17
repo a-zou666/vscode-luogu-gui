@@ -65,6 +65,22 @@ npm run pack:local    # 构建 + 特性门禁 + 打包，一步到位
 > 就不会拿到旧包。日志 `pack-watch.log` 已在 `.gitignore` 和 `.vscodeignore` 中，
 > 不会进 git、也不会进包。
 
+## 文档截图
+
+`README.md` 与文档里的界面截图不是手绘示意图，而是由 `scripts/doc-shots` 用**真实构建产物**渲染生成：
+
+```bash
+node scripts/doc-shots/shoot.mjs          # 生成 docs/images/*.png
+node scripts/doc-shots/verify-scenes.mjs  # 回归门禁：场景文本断言 + 截图哈希去重
+```
+
+- `index.html` —— 截图工坊：内联 VS Code Dark+ 主题变量，`?scene=` 选场景、`?shell=0` 去掉编辑器外壳，加载 `dist/webview-workbench.js` 渲染真实界面。
+- `shoot.mjs` —— 用 CDP（Chrome DevTools Protocol）驱动无头 Chrome，轮询页面 `data-ready` 标记后再截图，避免截到空白或半成品。
+- `verify-scenes.mjs` —— 门禁：断言每个场景渲染出的 DOM 含有关键词，并要求所有截图哈希两两不同，专门拦住「两个场景渲染成同一张图」这类静默失败。
+
+> [!IMPORTANT]
+> 改完界面后请重跑截图与门禁，并**把新的 PNG 一并提交** —— README 直接引用 `docs/images/`。
+
 ## 编写时需要注意的问题
 
 上传前运行 `npm run fix;npm run prettier`

@@ -10,6 +10,7 @@
   2. 题目页：题目搜索（关键词 + 难度筛选 + 分页）、题单广场（频道 → 题单 → 题目逐级下钻）、题面内嵌渲染，题面可直接跳提交
   3. 提交页：明确展示提交目标题目、语言与 O2 按文件后缀自动匹配、验证码按需出现、提交后实时显示评测进度与结果
   4. 新增 `test:layout` 提交框布局回归（22 项）、`check-bundle-features.cjs` 打包特性门禁、`watch-pack.mjs` 自动重打包
+  5. 新增文档截图工坊 `scripts/doc-shots`：用真实构建产物在无头 Chrome 中渲染界面出图，并提供 `verify-scenes.mjs` 回归门禁（场景文本断言 + 截图哈希去重）；README 重写为含徽章、演示截图与特性表的完整文档
 - Fix:
   1. 修复提交页监听器泄漏（每次提交叠加一个 window 监听器并写入已卸载 state）
   2. 修复登录后门控不消失：订阅 `authProvider.onDidChangeSessions` 并向 webview 推送登录态
@@ -18,6 +19,7 @@
   1. 版本号改为 `1.0.0`（本 fork 独立编号），`publisher` / `repository` / `homepage` / `bugs` 指向本 fork
   2. `ci` 脚本纳入 `test:layout`，构建产物与打包流程纳入自动核验
   3. `npm run ci` 全绿：17 个测试文件 / 134 个测试，release-policy 7/7，布局回归 22/22
+  4. `docs/images` 截图纳入版本控制；`.vscodeignore` 排除 `docs/`，截图不会进 `.vsix`
 
 > 说明：以下 `4.x` 版本历史来自上游 `yltx/vscode-luogu`，本 fork 直接继承其功能基线。
 
