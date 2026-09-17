@@ -12,6 +12,8 @@ node_modules/
 luogu-api-docs/
 productIcons/
 .kilo/
+pack-watch.log
+pack-watch.cmd
 AGENTS.md
 docs/
 scripts/

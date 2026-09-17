@@ -1,5 +1,26 @@
 # Change Log
 
+## 1.0.0
+
+本 fork（[a-zou666/vscode-luogu-gui](https://github.com/a-zou666/vscode-luogu-gui)）的首个版本，
+基于上游 [yltx/vscode-luogu](https://github.com/yltx/vscode-luogu) `4.16.0` 快照，重做主界面。
+
+- Add:
+  1. 新增统一「洛谷工作台」面板（侧边栏 `工作台` webview），用页签组织题目与提交，取代原先分散的侧边栏树视图
+  2. 题目页：题目搜索（关键词 + 难度筛选 + 分页）、题单广场（频道 → 题单 → 题目逐级下钻）、题面内嵌渲染，题面可直接跳提交
+  3. 提交页：明确展示提交目标题目、语言与 O2 按文件后缀自动匹配、验证码按需出现、提交后实时显示评测进度与结果
+  4. 新增 `test:layout` 提交框布局回归（22 项）、`check-bundle-features.cjs` 打包特性门禁、`watch-pack.mjs` 自动重打包
+- Fix:
+  1. 修复提交页监听器泄漏（每次提交叠加一个 window 监听器并写入已卸载 state）
+  2. 修复登录后门控不消失：订阅 `authProvider.onDidChangeSessions` 并向 webview 推送登录态
+  3. 修复切页签丢失题目下钻位置与已拉取数据：两个页签常驻挂载，只切显隐
+- Engineering:
+  1. 版本号改为 `1.0.0`（本 fork 独立编号），`publisher` / `repository` / `homepage` / `bugs` 指向本 fork
+  2. `ci` 脚本纳入 `test:layout`，构建产物与打包流程纳入自动核验
+  3. `npm run ci` 全绿：17 个测试文件 / 134 个测试，release-policy 7/7，布局回归 22/22
+
+> 说明：以下 `4.x` 版本历史来自上游 `yltx/vscode-luogu`，本 fork 直接继承其功能基线。
+
 ## 4.16.0
 
 - Add:

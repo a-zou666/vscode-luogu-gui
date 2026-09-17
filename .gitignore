@@ -4,6 +4,7 @@ dist/
 node_modules/
 .vscode-test/
 *.vsix
+pack-watch.log
 .idea/
 .DS_Store/
 test.*
@@ -12,3 +13,9 @@ test.*
 .claude/
 CLAUDE.md
 .kilo/
+
+# 本地一次性侦察/临时文件（不应进仓库）
+_*.txt
+_*.html
+_*.tmp
+*.code-workspace

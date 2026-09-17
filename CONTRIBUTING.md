@@ -1,4 +1,7 @@
-# vscode-luogu 开发指南
+# vscode-luogu-gui 开发指南
+
+> 本仓库是 [yltx/vscode-luogu](https://github.com/yltx/vscode-luogu) 的 fork，界面层已重做为统一工作台面板。
+> 上游的构建方式与发布约定整体沿用，差异见下文「本 fork 的版本约定」。
 
 **_本指南编写时的环境为node v20.5.0 + npm v9.8.0_**
 
@@ -11,17 +14,56 @@
 > [!TIP]
 > 构建前需要执行 `git submodule init` 和 `git submodule update` 确保 `luogu-api-docs` 存在
 
+## 本 fork 的版本约定
+
+本 fork 使用**独立版本号**（从 `1.0.0` 起），不跟随上游的 `4.x` 编号。
+上游的「偶数 minor 正式 / 奇数 minor 预发布」约定仍由 `scripts/release-policy.mjs` 强制校验：
+
+- 正式版本使用偶数 minor，例如 `1.0.0`、`1.2.0`。
+- 预发布版本使用奇数 minor，例如 `1.1.0`、`1.3.0`。
+- Git tag 必须是 `v` 加 package 版本，例如 `v1.0.0`。
+- `package.json`、`package-lock.json` 与 tag 三者版本必须一致，否则 `npm run test:release` 与发布工作流会失败。
+
+发布到 VS Code Marketplace 时注意 `publisher` 为 `a-zou666`，需要对应的 PAT（仓库 secret `PAT`）。
+
 ## 如何发布新版本
 
 代码全部修改完毕，已经准备好发布新版本时，先运行 `npm run pack` 确保插件可以正确打包，之后请在 `CHANGELOG.md` 中简要说明更新内容，并同步更新 `package.json` 和 `package-lock.json` 中的版本号。
 
-版本号使用以下约定：
+将更新了版本号的代码上传到 GitHub。创建 GitHub Release 并编写发布说明：奇数 minor 必须勾选 **Set as a pre-release**，偶数 minor 不得勾选。Release 发布后，GitHub Actions 会校验 tag、package 版本和发布通道，然后打包、上传 Release 附件并发布到对应的 VS Code Marketplace 正式或预发布通道。
 
-- 正式版本使用偶数 minor，例如 `4.14.0`、`4.16.0`。
-- 预发布版本使用奇数 minor，例如 `4.15.0`、`4.17.0`。
-- Git tag 必须是 `v` 加 package 版本，例如 `v4.15.0`。
+## 自动打包（本地改完就有新 .vsix）
 
-将更新了版本号的代码上传到 GitHub 并在 QQ 群里通知其他开发者。经同意后创建 GitHub Release 并编写发布说明：奇数 minor 必须勾选 **Set as a pre-release**，偶数 minor 不得勾选。Release 发布后，GitHub Actions 会校验 tag、package 版本和发布通道，然后打包、上传 Release 附件并发布到对应的 VS Code Marketplace 正式或预发布通道。
+**背景**：手工「改完记得打包」靠不住 —— 曾经出现源码改到 15:31、仓库里的
+`vscode-luogu.vsix` 还是 13:26 的旧包，拿去做 F5 实测的就是不含修复的包。
+
+所以本地起一个守护进程，源码一变就自动重打包：
+
+```bash
+npm run pack:watch
+```
+
+它会监听 `src/ webview/ resources/ scripts/` + `package.json` + `webpack.config.js`，
+按下面流水线跑，并把日志同时打到控制台和根目录 `pack-watch.log`：
+
+1. `npm run package` —— 生产构建（`prepackage` 会先清 `dist`）
+2. `scripts/check-bundle-features.cjs` —— 特性门禁，新功能真进了生产 bundle 才算数
+3. `npm run pack` —— vsce 打出 `vscode-luogu.vsix`
+4. **新鲜度自检** —— 产出的 `.vsix` 必须比最新源码新，否则报错（就是上面那次翻车点）
+
+控制台出现 `READY` 即可；`Ctrl+C` 退出。防抖默认 2500ms，可用
+`PACK_DEBOUNCE_MS=1000 npm run pack:watch` 调小。
+
+想只打一次（不开守护）：
+
+```bash
+npm run pack:local    # 构建 + 特性门禁 + 打包，一步到位
+```
+
+> [!NOTE]
+> 改完源码等守护打出 `✓ 完成：vscode-luogu.vsix ...` 再去 F5 / 安装实测，
+> 就不会拿到旧包。日志 `pack-watch.log` 已在 `.gitignore` 和 `.vscodeignore` 中，
+> 不会进 git、也不会进包。
 
 ## 编写时需要注意的问题
 

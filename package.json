@@ -3,20 +3,19 @@
   "displayName": "vscode-luogu",
   "description": "Solve Luogu Problems in VSCode",
   "icon": "resources/img/luogu-normal.png",
-  "version": "4.16.0",
+  "version": "1.0.0",
   "license": "MIT",
-  "publisher": "yltx",
+  "publisher": "a-zou666",
   "engines": {
     "vscode": "^1.75.0"
   },
-  "homepage": "https://github.com/yltx/vscode-luogu/blob/master/README.md",
+  "homepage": "https://github.com/a-zou666/vscode-luogu-gui/blob/master/README.md",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yltx/vscode-luogu.git"
+    "url": "https://github.com/a-zou666/vscode-luogu-gui.git"
   },
   "bugs": {
-    "url": "https://github.com/yltx/vscode-luogu/issues",
-    "email": "mvp.bxbl@gmail.com"
+    "url": "https://github.com/a-zou666/vscode-luogu-gui/issues"
   },
   "categories": [
     "Other",
@@ -569,6 +568,9 @@
   },
   "scripts": {
     "pack": "node scripts/package-extension.mjs",
+    "pack:check": "node scripts/check-bundle-features.cjs",
+    "pack:local": "npm run package && npm run pack:check && npm run pack",
+    "pack:watch": "node scripts/watch-pack.mjs",
     "vscode:prepublish": "npm run package",
     "build:icons": "node ./scripts/build-icons.mjs",
     "prepackage": "del-cli dist",
@@ -580,9 +582,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.check.json",
     "test": "vitest run",
     "test:release": "node --test scripts/release-policy.test.mjs",
+    "test:layout": "webpack --mode development --stats errors-only && node scripts/check-submit-layout.cjs",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "ci": "npm run lint && npm run typecheck && npm run test && npm run test:release"
+    "ci": "npm run lint && npm run typecheck && npm run test && npm run test:release && npm run test:layout"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",
